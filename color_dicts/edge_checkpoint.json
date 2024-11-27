@@ -1,0 +1,8 @@
+{
+    "upper": 103,
+    "lower": 39,
+    "kernel": 7,
+    "sobel": 5,
+    "dx": 1,
+    "dy": 1
+}
