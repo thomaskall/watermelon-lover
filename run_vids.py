@@ -1,16 +1,19 @@
 import cv2
+import glob
+import os
+from typing import List
 
-def list_cameras(max_cameras=10):
-    """Detect all available cameras by attempting to open them."""
-    cameras = []
-    for i in range(max_cameras):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            cameras.append(i)
-            cap.release()
-    return cameras
+def get_camera_device_paths():
+    # Find all media devices in /dev that are related to cameras
+    media_devices = glob.glob('/dev/media*')
 
-def show_camera_feeds(cameras):
+    # Filter out devices that are not actually camera-related
+    camera_paths = [dev for dev in media_devices if os.path.exists(dev)]
+    
+    return camera_paths
+
+
+def show_camera_feeds(cameras: List[str]):
     """Display video feeds for all detected cameras."""
     caps = {cam: cv2.VideoCapture(cam) for cam in cameras}
 
@@ -30,10 +33,14 @@ def show_camera_feeds(cameras):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    detected_cameras = list_cameras()
+    # Example usage
+    camera_paths = get_camera_device_paths()
+    if camera_paths:
+        print(f"Available camera devices: {camera_paths}")
+    else:
+        print("No camera devices found.")
     
-    if detected_cameras:
-        print(f"Detected Cameras: {detected_cameras}")
-        show_camera_feeds(detected_cameras)
+    if camera_paths:
+        show_camera_feeds(camera_paths)
     else:
         print("No cameras detected.")
