@@ -21,13 +21,13 @@ frequencies = np.logspace(np.log10(start_freq), np.log10(end_freq), len(t))
 # Generate the audio signal (sinusoidal wave)
 audio_signal = np.sin(2 * np.pi * frequencies * t)
 
-# Normalize to the range of int16 (-32768 to 32767)
+# Normalize to the range of float32 (-1 to 1)
 audio_signal_normalized = np.int16(audio_signal * 32767)
 
 # Write the signal to a .wav file
-write("sine_500Hz_to_10kHz.wav", sample_rate, audio_signal_normalized)
+write("sine_500Hz_to_550Hz.wav", sample_rate, audio_signal_normalized)
 
-print("Wave file generated successfully: sine_70Hz_to_10kHz.wav")
+print("Wave file generated successfully: sine_500Hz_to_550Hz.wav")
 
 
 sd.play(audio_signal_normalized, samplerate=sample_rate)

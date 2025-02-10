@@ -42,6 +42,7 @@ import numpy as np
 import wave
 import matplotlib.pyplot as plt
 from scipy.fft import fft, fftfreq
+import scipy.io.wavfile as wavfile
 from scipy.io.wavfile import write
 
 
@@ -52,7 +53,7 @@ print(sd.query_devices()) #use this to list audio devices if needed
 
 SAMPLE_RATE = 48000  # Your audio device's sample rate
 DURATION = 5  # Duration of the recording in seconds
-WAV_FILE = 'sine_500Hz_to_10kHz.wav'  # Input .wav file for playback
+WAV_FILE = 'sine_500Hz_to_550Hz.wav'  # Input .wav file for playback
 OUTPUT_FILE = 'recorded_audio_output.wav'  # Output .wav file to save the recorded audio
 CHANNELS = 1  # Mono audio input/output
 
@@ -83,23 +84,28 @@ audio_to_play = audio_to_play[:SAMPLE_RATE * DURATION]
 
 # Play and record simultaneously using playrec
 print("Playing and recording simultaneously...")
-#recorded_audio = sd.playrec(audio_to_play, samplerate=SAMPLE_RATE, channels=CHANNELS, dtype='int16', blocking=True)
+recorded_audio = sd.playrec(audio_to_play, samplerate=SAMPLE_RATE, channels=CHANNELS, dtype='int16', blocking=True)
 
-myrecording = sd.rec(int(DURATION * SAMPLE_RATE), channels=2, samplerate=SAMPLE_RATE)
+print(f"Min: {recorded_audio.min()}")
+print(f"Max: {recorded_audio.max()}")
+np.savetxt('array', recorded_audio, delimiter=',')
 
-obj = wave.open('sound.wav','wb')
-obj.setnchannels(1)
-obj.setsampwidth(2)
-obj.setframerate(SAMPLE_RATE)
-obj.writeframes(myrecording)
-#obj.writeframes(recorded_audio)
-sd.wait()
-obj.close()
+wavfile.write('output.wav',SAMPLE_RATE,recorded_audio)
+#myrecording = sd.rec(int(DURATION * SAMPLE_RATE), channels=2, samplerate=SAMPLE_RATE)
+
+# obj = wave.open('sound.wav','wb')
+# obj.setnchannels(1)
+# obj.setsampwidth(2)
+# obj.setframerate(SAMPLE_RATE)
+# #obj.writeframes(myrecording)
+# obj.writeframes(recorded_audio)
+# sd.wait()
+# obj.close()
 
 
-print("Playing recording...")
-sd.play(myrecording, SAMPLE_RATE)
-sd.wait()
+# print("Playing recording...")
+# sd.play(myrecording, SAMPLE_RATE)
+# sd.wait()
 
 # Save the recorded audio to a .wav file
 # write(OUTPUT_FILE, SAMPLE_RATE, recorded_audio)
