@@ -10,7 +10,7 @@ def get_camera_paths() -> List[str]:
     output = subprocess.check_output(cmd, shell=True).decode()
     
     # Extract camera paths using regex
-    camera_paths = re.findall(r"(/base/axi/[^\s]+)", output)
+    camera_paths = [path.strip(")") for path in re.findall(r"(/base/axi/[^\s]+)", output)]
     
     return camera_paths
 
