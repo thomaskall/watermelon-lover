@@ -53,12 +53,12 @@ print(sd.query_devices()) #use this to list audio devices if needed
 
 SAMPLE_RATE = 48000  # Your audio device's sample rate
 DURATION = 5  # Duration of the recording in seconds
-WAV_FILE = 'sine_500Hz_to_550Hz.wav'  # Input .wav file for playback
+WAV_FILE = 'sine_50Hz_to_1000Hz.wav'  # Input .wav file for playback
 OUTPUT_FILE = 'recorded_audio_output.wav'  # Output .wav file to save the recorded audio
 CHANNELS = 1  # Mono audio input/output
 
-input_device_index = 1  # Replace with the index of your input device
-output_device_index = 3  # Replace with the index of your output device
+input_device_index = 0  # Replace with the index of your input device
+output_device_index = 1  # Replace with the index of your output device
 
 # Setting the input and output devices for recording and playback
 sd.default.device = (input_device_index, output_device_index)

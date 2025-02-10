@@ -5,8 +5,8 @@ import sounddevice as sd
 
 # Parameters
 duration = 5  # duration of the sweep in seconds
-start_freq = 500  # starting frequency in Hz
-end_freq = 550  # ending frequency in Hz
+start_freq = 50  # starting frequency in Hz
+end_freq = 1000  # ending frequency in Hz
 sample_rate = 48000  # samples per second (standard for audio)
 
 # Time vector
@@ -25,9 +25,9 @@ audio_signal = np.sin(2 * np.pi * frequencies * t)
 audio_signal_normalized = np.int16(audio_signal * 32767)
 
 # Write the signal to a .wav file
-write("sine_500Hz_to_550Hz.wav", sample_rate, audio_signal_normalized)
+write("sine_50Hz_to_1000Hz.wav", sample_rate, audio_signal_normalized)
 
-print("Wave file generated successfully: sine_500Hz_to_550Hz.wav")
+print("Wave file generated successfully: sine_50Hz_to_1000Hz.wav")
 
 
 sd.play(audio_signal_normalized, samplerate=sample_rate)
