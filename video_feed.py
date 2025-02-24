@@ -117,10 +117,14 @@ class CameraController:
         # Dictionary to store the latest frame from each camera
         self.latest_frames = {}
         
+        # Video display
         self.display_process = None
+        self.display_running = Event()
+
+        # Picture capture
+        self.picture_queue = Queue()
         self.take_picture_event = Event()
         self.picture_name = None
-        self.display_running = Event()
 
     def __del__(self):
         self.release()
@@ -149,43 +153,43 @@ class CameraController:
 
             if frames:
                 combined = cv2.hconcat(frames)
+
+                picture_name: str | None = None
+                try:
+                    picture_name = self.picture_queue.get_nowait()
+                except Empty:
+                    pass
                 
                 # Check if we need to take a picture
-                if self.take_picture_event.is_set():
-                    self._save_current_frames()
+                if self.take_picture_event.is_set() and picture_name is not None:
+                    self._save_current_frames(picture_name, self.latest_frames)
                     self.take_picture_event.clear()
 
                     # Create white flash frame of the same size
                     flash_frame = np.full_like(combined, 255, dtype=np.uint8)
                     cv2.imshow("Camera Feeds", flash_frame)
                     cv2.waitKey(50)  # Show flash for 50ms
-                    
-                    # Show the actual frame again
-                    cv2.imshow("Camera Feeds", combined)
-                else:
-                    cv2.imshow("Camera Feeds", combined)
+
+                cv2.imshow("Camera Feeds", combined)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
         cv2.destroyAllWindows()
 
-    def _save_current_frames(self):
+    def _save_current_frames(self, name, latest_frames):
         """Save the current frames when triggered"""
-        if not self.picture_name:
+        print(f"Name for the pictures: {name}")
+        if not name:
             print("No picture name provided")
             return
             
         current_time = time.time()
-        for camera_id in range(len(self.cameras)):
-            if camera_id in self.latest_frames:
-                timestamp, frame = self.latest_frames[camera_id]
-                if current_time - timestamp < 1.0:
-                    cv2.imwrite(f"{self.data_dir}/{self.picture_name}_{camera_id}.jpg", frame)
-                else:
-                    print(f"Warning: Stale frame for camera {camera_id}")
+        for (camera_id, timestamp, frame) in latest_frames.values():
+            if current_time - timestamp < 1.0:
+                cv2.imwrite(f"{self.data_dir}/{name}_{camera_id}.jpg", frame)
             else:
-                print(f"Error: No frame available for camera {camera_id}")
+                    print(f"Warning: Stale frame for camera {camera_id}")
 
     def start_display(self):
         """Start displaying camera feeds in a separate process"""
@@ -208,7 +212,7 @@ class CameraController:
             print("Error: Display not running")
             return
             
-        self.picture_name = name
+        self.picture_queue.put(name)
         self.take_picture_event.set()
         
         # Wait briefly to ensure the picture is taken
