@@ -6,7 +6,7 @@ import csv
 from threading import Thread
 from datetime import datetime
 from queue import Queue
-from keyboard import read_key
+from pynput import keyboard
 import pyautogui
 from video_feed import CameraController
 from audio import AudioController
@@ -95,36 +95,42 @@ class DataCollector:
     
     def _keyboard_listener(self):
         """Listen for keyboard commands in a separate thread"""
-        while self.is_running:
+        def on_press(key):
             try:
-                # Space bar to capture data
-                key = read_key()
-                if key == "space":
+                # Handle alphanumeric keys
+                if hasattr(key, 'char'):
+                    if key.char == 'a':
+                        print("Capturing audio...")
+                        self.command_queue.put('audio')
+                    elif key.char == 'v':
+                        print("Capturing video...")
+                        self.command_queue.put('video')
+                    elif key.char == 'q':
+                        print("Quitting...")
+                        self.command_queue.put('quit')
+                        return False  # Stop listener
+                # Handle special keys
+                elif key == keyboard.Key.space:
                     print("Capturing data...")
                     self.command_queue.put('capture')
-                elif key == "a":
-                    print("Capturing audio...")
-                    self.command_queue.put('audio')
-                elif key == "v":
-                    print("Capturing video...")
-                    self.command_queue.put('video')
-                # 'q' to quit
-                elif key == "q" or key == "esc" or key == "ctrl+c":
+                elif key == keyboard.Key.esc:
                     print("Quitting...")
                     self.command_queue.put('quit')
-                    break
-
+                    return False  # Stop listener
                 else:
                     print(f'Key "{key}" not recognized')
-                    print('If you are trying to exit the program, press "q"')
-                    time.sleep(1)
-                
-                # Add more keyboard commands as needed
-                time.sleep(0.01)  # Prevent high CPU usage
+                    print('If you are trying to exit the program, press "q" or ESC')
                 
             except Exception as e:
                 print(f"Keyboard listener error: {e}")
-                break
+                return False  # Stop listener on error
+            
+            return True  # Continue listening
+
+        # Start listening to keyboard events
+        with keyboard.Listener(on_press=on_press) as listener:
+            listener.join()
+            self.is_running = False  # Ensure program stops when listener stops
     
     def _process_commands(self):
         """Process commands from the queue"""
@@ -177,7 +183,7 @@ class DataCollector:
         print("  SPACE - Capture data")
         print("  A     - Capture audio")
         print("  V     - Capture video")
-        print("  Q     - Quit")
+        print("  Q/ESC - Quit")
         print("\nWaiting for commands...")
         
         # Start the camera display

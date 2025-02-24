@@ -1,7 +1,7 @@
 numpy
 regex
 pyautogui
-keyboard
+pynput
 sounddevice
 matplotlib
 scipy
