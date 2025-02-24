@@ -1,3 +1,8 @@
 numpy
-loguru
 regex
+pyautogui
+keyboard
+sounddevice
+matplotlib
+scipy
+wave

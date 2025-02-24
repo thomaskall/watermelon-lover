@@ -24,7 +24,7 @@ class DataCollector:
         # Get watermelon ID before starting session
         self.watermelon_id = self._get_watermelon_id()
         if not self.watermelon_id:  # User cancelled
-            raise ValueError("Watermelon ID is required")
+            raise ValueError(f"Watermelon ID is required... check out {self.metadata_file} for past sessions and naming conventions")
             
         self.session_dir = self._create_session_dir()
         self.session_id = os.path.basename(self.session_dir)
@@ -35,7 +35,6 @@ class DataCollector:
         
         # State management
         self.is_running = True
-        self.collection_count = 0
         
         # Command queue for thread safety
         self.command_queue = Queue()
@@ -79,6 +78,8 @@ class DataCollector:
         print(f"Size of img directory: {size_img}")
         size_wav = os.path.getsize(os.path.join(self.session_dir, "wav"))
         print(f"Size of wav directory: {size_wav}")
+        if score is not None:
+            print(f"Score: {score}")
 
         with open(self.metadata_file, 'a', newline='') as f:
             writer = csv.writer(f)
@@ -97,26 +98,25 @@ class DataCollector:
             try:
                 # Space bar to capture data
                 key = read_key()
-                match key:
-                    case "space":
-                        print("Capturing data...")
-                        self.command_queue.put('capture')
-                    case "a":
-                        print("Capturing audio...")
-                        self.command_queue.put('audio')
-                    case "v":
-                        print("Capturing video...")
-                        self.command_queue.put('video')
-                    # 'q' to quit
-                    case "q" | "esc" | "ctrl+c":
-                        print("Quitting...")
-                        self.command_queue.put('quit')
-                        break
+                if key == "space":
+                    print("Capturing data...")
+                    self.command_queue.put('capture')
+                elif key == "a":
+                    print("Capturing audio...")
+                    self.command_queue.put('audio')
+                elif key == "v":
+                    print("Capturing video...")
+                    self.command_queue.put('video')
+                # 'q' to quit
+                elif key == "q" or key == "esc" or key == "ctrl+c":
+                    print("Quitting...")
+                    self.command_queue.put('quit')
+                    break
 
-                    case _:
-                        print(f'"{key}" not recognized')
-                        print('If you are trying to exit the program, press "q"')
-                        time.sleep(1)
+                else:
+                    print(f'Key "{key}" not recognized')
+                    print('If you are trying to exit the program, press "q"')
+                    time.sleep(1)
                 
                 # Add more keyboard commands as needed
                 time.sleep(0.01)  # Prevent high CPU usage
@@ -129,20 +129,19 @@ class DataCollector:
         """Process commands from the queue"""
         while not self.command_queue.empty():
             command = self.command_queue.get()
-            match command:
-                case 'capture':
-                    self._capture_data()
-                case 'audio':
-                    self._capture_audio()
-                case 'video':
-                    self._capture_video()
-                case 'quit':
-                    self.stop()
+            if command == 'capture':
+                self._capture_data()
+            elif command == 'audio':
+                self._capture_audio()
+            elif command == 'video':
+                self._capture_video()
+            elif command == 'quit':
+                self.stop()
     
     def _capture_data(self):
         """Capture both video and audio data"""
         timestamp = make_timestamp()
-        base_name = f"sample_{self.collection_count:04d}_{timestamp}"
+        base_name = f"sample_{timestamp}"
         
         try:
             # Capture camera data
@@ -151,8 +150,7 @@ class DataCollector:
             # Capture audio data (TODO)
             # self.audio_controller.capture_audio(base_name)
             
-            self.collection_count += 1
-            print(f"Captured sample {self.collection_count}")
+            print(f"Captured sample")
             
         except Exception as e:
             print(f"Error capturing data: {e}")
@@ -160,13 +158,13 @@ class DataCollector:
     def _capture_audio(self):
         """Capture audio data"""
         timestamp = make_timestamp()
-        base_name = f"sample_{self.collection_count:04d}_{timestamp}"
+        base_name = f"sample_{timestamp}"
         self.audio_controller.capture_audio(base_name)
     
     def _capture_video(self):
         """Capture video data"""
         timestamp = make_timestamp()
-        base_name = f"sample_{self.collection_count:04d}_{timestamp}"
+        base_name = f"sample_{timestamp}"
         self.camera_controller.take_picture(base_name)
     
     def start(self):
@@ -217,9 +215,8 @@ class DataCollector:
         # Get watermelon score before cleanup
         score: str | None = self._get_watermelon_score()
         self._save_metadata(score)
-        print(f"Saved score {score} for watermelon {self.watermelon_id}")
         
-        print(f"Collection complete. {self.collection_count} samples captured.")
+        print(f"Collection complete.")
         print(f"Data saved in: {self.session_dir}")
 
 def main():
