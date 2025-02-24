@@ -3,9 +3,7 @@ import numpy as np
 import os
 import time
 import csv
-from threading import Thread
 from datetime import datetime
-from queue import Queue
 import pyautogui
 from video_feed import CameraController
 from audio import AudioController
@@ -91,13 +89,14 @@ class DataCollector:
     
     def _keyboard_listener(self):
         """Listen for keyboard commands using simple input"""
+        time.sleep(5)
         print("\nEnter commands:")
         print("  [Enter] - Capture data")
         print("  a      - Capture audio")
         print("  v      - Capture video")
         print("  q      - Quit")
         
-        while self.is_running:
+        while True:
             try:
                 command = input("Enter command: \n").lower().strip()
                 
@@ -112,7 +111,6 @@ class DataCollector:
                     self._capture_video()
                 elif command == "q":
                     print("Quitting...")
-                    self.stop()
                     break
                 else:
                     print(f'Command "{command}" not recognized')
@@ -121,8 +119,6 @@ class DataCollector:
             except Exception as e:
                 print(f"Input error: {e}")
                 break
-        
-        self.is_running = False
     
     def _capture_data(self):
         """Capture both video and audio data"""
@@ -155,42 +151,22 @@ class DataCollector:
     
     def start(self):
         """Start the data collection system"""
+        # Start the camera display
+        self.camera_controller.start_display()
         print("\nStarting data collection system...")
         print(f"Watermelon ID: {self.watermelon_id}")
         print(f"Saving data to: {self.session_dir}")
         
-        # Start the camera display
-        self.camera_controller.start_display()
-        
         # Start keyboard listener
-        self.keyboard_thread = Thread(target=self._keyboard_listener)
-        self.keyboard_thread.start()
+        self._keyboard_listener()
         
-        # Main loop
-        try:
-            while self.is_running:
-                self._process_commands()
-                time.sleep(0.01)
-                
-        except KeyboardInterrupt:
-            self.stop()
-            
-        finally:
-            self.cleanup()
-    
-    def stop(self):
-        """Stop the data collection system"""
-        self.is_running = False
+        self.cleanup()
     
     def cleanup(self):
         """Clean up resources"""
         print("\nCleaning up resources...")
 
         self.camera_controller.release()
-        self.audio_controller.release()  # TODO
-
-        if self.keyboard_thread.is_alive():
-            self.keyboard_thread.join()
         
         # Get watermelon score before cleanup
         score: str | None = self._get_watermelon_score()
