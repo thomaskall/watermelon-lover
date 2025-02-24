@@ -1,5 +1,3 @@
-
-
 import sounddevice as sd
 import numpy as np
 import wave
@@ -8,7 +6,6 @@ from scipy.fft import fft, fftfreq
 import scipy.io.wavfile as wavfile
 from scipy.io.wavfile import write
 import os
-
 
 print(sd.query_devices()) #use this to list audio devices if needed
 
