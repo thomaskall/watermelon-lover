@@ -95,9 +95,9 @@ class CameraController:
         self.session_dir = session_dir
         self.data_dir = os.path.join(self.session_dir, "img")
         print("Initializing Video Feed")
-        print(f"Data directory: {self.data_dir}")
+        print(f"Images data directory: {self.data_dir}")
         if not os.path.exists(self.data_dir):
-            print(f"Data directory does not exist, creating it")
+            print(f"Images data directory does not exist, creating it")
             os.makedirs(self.data_dir)
             
         self.camera_paths: List[str] = get_camera_paths()

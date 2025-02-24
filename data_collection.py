@@ -9,6 +9,7 @@ from queue import Queue
 from keyboard import read_key
 import pyautogui
 from video_feed import CameraController
+from audio import AudioController
 
 def make_timestamp():
     """Make a timestamp"""
@@ -31,7 +32,7 @@ class DataCollector:
         
         # Initialize controllers
         self.camera_controller = CameraController(self.session_dir)
-        # self.audio_controller = AudioController(self.session_dir)
+        self.audio_controller = AudioController(self.session_dir)
         
         # State management
         self.is_running = True
@@ -148,7 +149,7 @@ class DataCollector:
             self.camera_controller.take_picture(base_name)
             
             # Capture audio data (TODO)
-            # self.audio_controller.capture_audio(base_name)
+            self.audio_controller.capture_audio(base_name)
             
             print(f"Captured sample")
             
@@ -207,7 +208,7 @@ class DataCollector:
         print("\nCleaning up resources...")
 
         self.camera_controller.release()
-        # self.audio_controller.release()  # TODO
+        self.audio_controller.release()  # TODO
 
         if self.keyboard_thread.is_alive():
             self.keyboard_thread.join()
