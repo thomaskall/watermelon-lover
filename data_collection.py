@@ -6,7 +6,6 @@ import csv
 from threading import Thread
 from datetime import datetime
 from queue import Queue
-from pynput import keyboard
 import pyautogui
 from video_feed import CameraController
 from audio import AudioController
@@ -36,9 +35,6 @@ class DataCollector:
         
         # State management
         self.is_running = True
-        
-        # Command queue for thread safety
-        self.command_queue = Queue()
         
         # Ensure metadata file exists with headers
         self._init_metadata_file()
@@ -94,56 +90,39 @@ class DataCollector:
             ])
     
     def _keyboard_listener(self):
-        """Listen for keyboard commands in a separate thread"""
-        def on_press(key):
+        """Listen for keyboard commands using simple input"""
+        print("\nEnter commands:")
+        print("  [Enter] - Capture data")
+        print("  a      - Capture audio")
+        print("  v      - Capture video")
+        print("  q      - Quit")
+        
+        while self.is_running:
             try:
-                # Handle alphanumeric keys
-                if hasattr(key, 'char'):
-                    if key.char == 'a':
-                        print("Capturing audio...")
-                        self.command_queue.put('audio')
-                    elif key.char == 'v':
-                        print("Capturing video...")
-                        self.command_queue.put('video')
-                    elif key.char == 'q':
-                        print("Quitting...")
-                        self.command_queue.put('quit')
-                        return False  # Stop listener
-                # Handle special keys
-                elif key == keyboard.Key.space:
+                command = input("Enter command: \n").lower().strip()
+                
+                if command == "":  # Enter key pressed
                     print("Capturing data...")
-                    self.command_queue.put('capture')
-                elif key == keyboard.Key.esc:
+                    self._capture_data()
+                elif command == "a":
+                    print("Capturing audio...")
+                    self._capture_audio()
+                elif command == "v":
+                    print("Capturing video...")
+                    self._capture_video()
+                elif command == "q":
                     print("Quitting...")
-                    self.command_queue.put('quit')
-                    return False  # Stop listener
+                    self.stop()
+                    break
                 else:
-                    print(f'Key "{key}" not recognized')
-                    print('If you are trying to exit the program, press "q" or ESC')
+                    print(f'Command "{command}" not recognized')
+                    print('Available commands: [Enter], a, v, q')
                 
             except Exception as e:
-                print(f"Keyboard listener error: {e}")
-                return False  # Stop listener on error
-            
-            return True  # Continue listening
-
-        # Start listening to keyboard events
-        with keyboard.Listener(on_press=on_press) as listener:
-            listener.join()
-            self.is_running = False  # Ensure program stops when listener stops
-    
-    def _process_commands(self):
-        """Process commands from the queue"""
-        while not self.command_queue.empty():
-            command = self.command_queue.get()
-            if command == 'capture':
-                self._capture_data()
-            elif command == 'audio':
-                self._capture_audio()
-            elif command == 'video':
-                self._capture_video()
-            elif command == 'quit':
-                self.stop()
+                print(f"Input error: {e}")
+                break
+        
+        self.is_running = False
     
     def _capture_data(self):
         """Capture both video and audio data"""
@@ -179,12 +158,6 @@ class DataCollector:
         print("\nStarting data collection system...")
         print(f"Watermelon ID: {self.watermelon_id}")
         print(f"Saving data to: {self.session_dir}")
-        print("\nControls:")
-        print("  SPACE - Capture data")
-        print("  A     - Capture audio")
-        print("  V     - Capture video")
-        print("  Q/ESC - Quit")
-        print("\nWaiting for commands...")
         
         # Start the camera display
         self.camera_controller.start_display()
