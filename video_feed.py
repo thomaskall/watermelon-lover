@@ -7,6 +7,7 @@ import re
 import numpy as np
 from multiprocessing import Process, Queue, Event
 import time
+import queue
 
 def get_camera_paths() -> List[str]:
     """Get the paths to the cameras from the libcamera-hello command"""
@@ -17,7 +18,7 @@ def get_camera_paths() -> List[str]:
     camera_paths = [path.strip(")") for path in re.findall(r"(/base/axi/[^\s]+)", output)]
     return camera_paths
 
-def build_pipeline(camera_path, width=640, height=480, fps=30):
+def build_pipeline(camera_path, width=1280, height=720,fps=15):
     return (
         f"libcamerasrc camera-name=\"{camera_path}\" ! \
         video/x-raw,format=BGR,width={width},height={height},framerate={fps}/1 ! \
@@ -152,12 +153,15 @@ class CameraController:
                         frames.append(frame)
 
             if frames:
-                combined = cv2.hconcat(frames)
+                smaller_frames = []
+                for frame in frames:
+                    smaller_frames.append(cv2.resize(frame.copy(), (640, 640)))
+                combined = cv2.hconcat(smaller_frames)
 
                 picture_name: str | None = None
                 try:
                     picture_name = self.picture_queue.get_nowait()
-                except Empty:
+                except queue.Empty:
                     pass
                 
                 # Check if we need to take a picture
@@ -182,10 +186,9 @@ class CameraController:
         print(f"Name for the pictures: {name}")
         if not name:
             print("No picture name provided")
-            return
-            
+            return 
         current_time = time.time()
-        for (camera_id, timestamp, frame) in latest_frames.values():
+        for camera_id, (timestamp, frame) in latest_frames.items():
             if current_time - timestamp < 1.0:
                 cv2.imwrite(f"{self.data_dir}/{name}_{camera_id}.jpg", frame)
             else:
