@@ -1,13 +1,12 @@
 import cv2
-import glob
 import os
-from typing import List, Tuple, Any
+from typing import List
 import subprocess
 import re
 import numpy as np
 from multiprocessing import Process, Queue, Event
-import time
 import queue
+import time
 
 def get_camera_paths() -> List[str]:
     """Get the paths to the cameras from the libcamera-hello command"""
@@ -18,7 +17,7 @@ def get_camera_paths() -> List[str]:
     camera_paths = [path.strip(")") for path in re.findall(r"(/base/axi/[^\s]+)", output)]
     return camera_paths
 
-def build_pipeline(camera_path, width=1280, height=720,fps=15):
+def build_pipeline(camera_path, width=640, height=480, fps=30):
     return (
         f"libcamerasrc camera-name=\"{camera_path}\" ! \
         video/x-raw,format=BGR,width={width},height={height},framerate={fps}/1 ! \
@@ -61,35 +60,46 @@ def show_camera_feeds(cameras: List[str]):
 
 class Camera:
     def __init__(self, id: int, camera_path: str, frame_queue: Queue, stop_event):
-        self.id = id
-        self.camera_path = camera_path
-        self.pipeline = build_pipeline(camera_path)
-        self.frame_queue = frame_queue
+        self.id: int = id
+        self.camera_path: str = camera_path
+
+        self.pipeline: str = build_pipeline(camera_path)
+        self.cap: cv2.VideoCapture = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
+
+        self.frame_queue: Queue = frame_queue
         self.stop_event = stop_event
-        self.process = Process(target=self._capture_frames)
+        self.process: Process = Process(target=self._capture_frames)
         self.process.start()
 
     def _capture_frames(self):
         """Continuously capture frames in a separate process"""
-        cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
-        if not cap.isOpened():
+        
+        if not self.cap.isOpened():
             print(f"Error: Could not open camera {self.id}")
             return
 
         while not self.stop_event.is_set():
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
             if ret:
                 # Add timestamp to track frame freshness
                 self.frame_queue.put((self.id, time.time(), frame))
             else:
                 print(f"Error: Could not read frame from camera {self.id}")
                 break
-
-        cap.release()
+        
+        print(f"Releasing camera {self.id}")
+        self.cap.release()
 
     def release(self):
+        print(f"Releasing camera {self.id}")
         self.stop_event.set()
-        self.process.join()
+        self.process.join(timeout=2)
+        if self.process.is_alive():
+            print(f"Camera {self.id} process didn't stop gracefully, terminating...")
+            self.process.terminate()
+            self.process.join()
+            self.cap.release()
+        print(f"Camera {self.id} released")
 
 class CameraController:
     def __init__(self, session_dir: str):
@@ -107,7 +117,9 @@ class CameraController:
         if not self.camera_paths:
             print("No cameras detected.")
             exit()
-            
+
+        self.command_queue = Queue()
+        
         self.frame_queues = [Queue() for _ in self.camera_paths]
         self.stop_event = Event()
         self.cameras = [
@@ -127,11 +139,7 @@ class CameraController:
         self.take_picture_event = Event()
         self.picture_name = None
 
-    def __del__(self):
-        self.release()
-        cv2.destroyAllWindows()
-
-    def process_frames(self):
+    def _process_frames(self):
         """Process all available frames from the queues"""
         for queue in self.frame_queues:
             while not queue.empty():
@@ -142,43 +150,44 @@ class CameraController:
         """Run the display loop in a separate process"""
         self.display_running.set()
         while self.display_running.is_set():
-            self.process_frames()
-            
-            frames = []
-            current_time = time.time()
-            for camera_id in range(len(self.cameras)):
-                if camera_id in self.latest_frames:
-                    timestamp, frame = self.latest_frames[camera_id]
-                    if current_time - timestamp < 1.0:
-                        frames.append(frame)
-
-            if frames:
-                smaller_frames = []
-                for frame in frames:
-                    smaller_frames.append(cv2.resize(frame.copy(), (640, 640)))
-                combined = cv2.hconcat(smaller_frames)
-
-                picture_name: str | None = None
-                try:
-                    picture_name = self.picture_queue.get_nowait()
-                except queue.Empty:
-                    pass
+            try:
+                self._process_frames()
                 
-                # Check if we need to take a picture
-                if self.take_picture_event.is_set() and picture_name is not None:
-                    self._save_current_frames(picture_name, self.latest_frames)
-                    self.take_picture_event.clear()
+                frames = []
+                current_time = time.time()
+                for camera_id in range(len(self.cameras)):
+                    if camera_id in self.latest_frames:
+                        timestamp, frame = self.latest_frames[camera_id]
+                        if current_time - timestamp < 1.0:
+                            frames.append(frame)
 
-                    # Create white flash frame of the same size
-                    flash_frame = np.full_like(combined, 255, dtype=np.uint8)
-                    cv2.imshow("Camera Feeds", flash_frame)
-                    cv2.waitKey(50)  # Show flash for 50ms
+                if frames:
+                    combined = cv2.hconcat(frames)
 
-                cv2.imshow("Camera Feeds", combined)
+                    picture_name: str | None = None
+                    try:
+                        picture_name = self.picture_queue.get_nowait()
+                    except queue.Empty:
+                        pass
+                    
+                    # Check if we need to take a picture
+                    if self.take_picture_event.is_set() and picture_name is not None:
+                        self._save_current_frames(picture_name, self.latest_frames)
+                        self.take_picture_event.clear()
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+                        # Create white flash frame of the same size
+                        flash_frame = np.full_like(combined, 255, dtype=np.uint8)
+                        cv2.imshow("Camera Feeds", flash_frame)
+                        cv2.waitKey(50)  # Show flash for 50ms
+
+                    cv2.imshow("Camera Feeds", combined)
+
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+            except Exception as e:
+                print(f"{e}")
                 break
-
+        print("Exiting display loop")
         cv2.destroyAllWindows()
 
     def _save_current_frames(self, name, latest_frames):
@@ -186,9 +195,10 @@ class CameraController:
         print(f"Name for the pictures: {name}")
         if not name:
             print("No picture name provided")
-            return 
+            return
+            
         current_time = time.time()
-        for camera_id, (timestamp, frame) in latest_frames.items():
+        for (camera_id, timestamp, frame) in latest_frames.items():
             if current_time - timestamp < 1.0:
                 cv2.imwrite(f"{self.data_dir}/{name}_{camera_id}.jpg", frame)
             else:
@@ -201,13 +211,6 @@ class CameraController:
             self.display_process.start()
         else:
             print("Display already running")
-
-    def stop_display(self):
-        """Stop the display process"""
-        if self.display_process and self.display_process.is_alive():
-            self.display_running.clear()
-            self.display_process.join()
-            self.display_process = None
 
     def take_picture(self, name: str):
         """Signal the display process to take a picture"""
@@ -230,16 +233,27 @@ class CameraController:
 
     def release(self):
         """Clean up resources"""
-        self.stop_display()
+        print("Releasing Camera Controller")
+        
+        self.display_running.clear()
+        self.display_process.join()
+
         self.stop_event.set()
+        # Stop camera processes
+        print("Stopping camera processes...")
         for camera in self.cameras:
             camera.release()
-        print("Cameras have been released")
+        print("All cameras have been released")
+
         for queue in self.frame_queues:
             while not queue.empty() or queue.qsize() > 0:
                 queue.get()
+
         print("Frame queues have been cleared")
         print("All resources have been released, quitting program")
+
+
+
 
 def video_feed():
     camera_paths: List[str] = get_camera_paths()

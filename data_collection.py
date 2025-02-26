@@ -16,10 +16,23 @@ parser.add_argument(
         "--visual",
         action="store_true",
         required=False,
-        help="whether or not to use video stream"
+        help="whether or not to collect visual data"
+        )
+parser.add_argument(
+        "-a",
+        "--audio",
+        action="store_true",
+        required=False,
+        help="whether or not to collect audio data"
+        )
+parser.add_argument(
+        "--audio-method",
+        type=str,
+        choices=["tap", "sweep"],
+        required=False,
+        help="method to use for audio capture. Options: 'tap or 'sweep'"
         )
 args = parser.parse_args()
-
 def make_timestamp():
     """Make a timestamp"""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -27,6 +40,10 @@ def make_timestamp():
 class DataCollector:
     def __init__(self, base_dir="data"):
         """Initialize the data collection system"""
+        if args.visual and args.audio:
+            raise ValueError("Cannot collect both visual and audio data at the same time")
+        elif not args.visual and not args.audio:
+            raise ValueError("Must collect either visual or audio data. Use flag -v (visual) or flag -a (audio) to specify data type.")
         self.base_dir = base_dir
         self.metadata_file = os.path.join(base_dir, "metadata.csv")
         self.gui_title = "Data Collection"
@@ -42,13 +59,15 @@ class DataCollector:
         # Initialize controllers
         if args.visual:
             self.camera_controller = CameraController(self.session_dir)
-        self.audio_controller = AudioController(self.session_dir)
-        
+        elif args.audio:
+            self.audio_controller = AudioController(self.session_dir)
+
         # State management
         self.is_running = True
         
         # Ensure metadata file exists with headers
         self._init_metadata_file()
+        self.samples_captured: int = 0
     
     def _init_metadata_file(self):
         """Initialize metadata CSV file if it doesn't exist"""
@@ -84,7 +103,7 @@ class DataCollector:
         print(f"Session directory: {self.session_dir}")
         size_img = os.path.getsize(os.path.join(self.session_dir, "img"))
         print(f"Size of img directory: {size_img}")
-        size_wav = os.path.getsize(os.path.join(self.session_dir, "wav"))
+        size_wav = os.path.getsize(os.path.join(self.session_dir, "wav")) // 2
         print(f"Size of wav directory: {size_wav}")
         if score is not None:
             print(f"Score: {score}")
@@ -103,53 +122,26 @@ class DataCollector:
     def _keyboard_listener(self):
         """Listen for keyboard commands using simple input"""
         time.sleep(5)
-        if args.visual:
-            print("\nEnter commands:")
-            print("  [Enter] - Capture data")
-            print("  a      - Capture audio")
-            print("  v      - Capture video")
-            print("  q      - Quit")
-        else:
-            print("\nPress ENTER to capture sample")
-        
         while True:
             try:
-                if not args.visual:
-                    command = input("\nPress ENTER to capture sample: \n").lower().strip()
-                else:
-                    print("COMMAND OPTIONS:")
-                    print("\t[ENTER]    -   capture both audio and images")
-                    print("\ta          -   capture only an audio sample")
-                    print("\tv          -   capture only a visual sample")
-                    print("\tq          -   quit the program")
-                    command = input("\nEnter command...\n")
-
+                command = input("\nENTER to capture sample, type 'q' and ENTER to quit...\n").lower().strip()
 
                 if command == "":  # Enter key pressed
                     print("Capturing data...")
                     self._capture_data()
-                elif command == "a":
-                    print("Capturing audio...")
-                    self._capture_audio()
-                elif command == "v":
-                    if args.visual:
-                        print("Taking photos...")
-                        self._capture_video()
-                    else:
-                        print("Capture failed, no visual inspection initialized")
                 elif command == "q":
                     print("Quitting...")
-                    break
+                    return
                 else:
                     print(f'Command "{command}" not recognized')
-                    print('Available commands: [Enter], a, v, q')
+                    print('Available commands: [Enter], q')
                 
             except Exception as e:
                 print(f"Input error: {e}")
-                break
+                return
     
     def _capture_data(self):
-        """Capture both video and audio data"""
+        """Capture video or audio data"""
         timestamp = make_timestamp()
         base_name = f"sample_{timestamp}"
         
@@ -158,25 +150,15 @@ class DataCollector:
             if args.visual:
                 self.camera_controller.take_picture(base_name)
             
-            # Capture audio data (TODO)
-            self.audio_controller.capture_audio(base_name)
+            elif args.audio:
+                self.audio_controller.capture_audio(base_name)
             
-            print(f"Captured sample")
-            
+            print(f"Sample {base_name} captured")
+            self.samples_captured += 1
+            print(f"Total samples captured: {self.samples_captured}")
+
         except Exception as e:
             print(f"Error capturing data: {e}")
-
-    def _capture_audio(self):
-        """Capture audio data"""
-        timestamp = make_timestamp()
-        base_name = f"sample_{timestamp}"
-        self.audio_controller.capture_audio(base_name)
-    
-    def _capture_video(self):
-        """Capture video data"""
-        timestamp = make_timestamp()
-        base_name = f"sample_{timestamp}"
-        self.camera_controller.take_picture(base_name)
     
     def start(self):
         """Start the data collection system"""

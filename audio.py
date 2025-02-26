@@ -59,31 +59,50 @@ class AudioController:
             audio_data = np.frombuffer(wf.readframes(num_frames), dtype=np.int16)
         return audio_data, sample_rate
         
-    def capture_audio(self, base_name: str):
+    def capture_audio(self, base_name: str, method: str = "tap"):
         """Capture audio data"""
         if self.audio_to_play is None:
-            print("Error: No audio file loaded for playback")
+            print("Warning: No audio file loaded for playback.... using 'tap' method")
+            method = "tap"
+        
+        if method == "tap":
+            print("Tapping audio")
+        elif method == "sweep":
+            print("Sweeping audio")
+        else:
+            print("Invalid method")
             return
-            
-        output_file = os.path.join(self.data_dir, f"{base_name}.wav")
-        print(f"Capturing audio to: {output_file}")
+        
+        output_file = os.path.join(self.data_dir, f"{method}_{base_name}.wav")
+        print(f"Audio sample method: {method}")
+        print(f"Audio sample file: {output_file}")
 
-        # Ensure audio length matches the duration by repeating it
-        num_repeats = int(np.ceil(self.sample_rate * self.duration / len(self.audio_to_play)))
-        audio_to_play = np.tile(self.audio_to_play, num_repeats)
+        if method == "sweep":
+            # Ensure audio length matches the duration by repeating it
+            num_repeats = int(np.ceil(self.sample_rate * self.duration / len(self.audio_to_play)))
+            audio_to_play = np.tile(self.audio_to_play, num_repeats)
 
-        # Make sure the data fits the duration
-        audio_to_play = audio_to_play[:self.sample_rate * self.duration]
+            # Make sure the data fits the duration
+            audio_to_play = audio_to_play[:self.sample_rate * self.duration]
 
-        # Play and record simultaneously
-        print("Playing and recording simultaneously...")
-        recorded_audio = sd.playrec(
-            audio_to_play, 
-            samplerate=self.sample_rate, 
-            channels=self.channels, 
-            dtype='int16', 
-            blocking=True
-        )
+            # Play and record simultaneously
+            print("Playing sweep and recording audio...")
+            recorded_audio = sd.playrec(
+                audio_to_play, 
+                samplerate=self.sample_rate, 
+                channels=self.channels, 
+                dtype='int16',
+                blocking=True
+            )
+        else:
+            print("Recording taps...")
+            recorded_audio = sd.rec(
+                self.sample_rate * self.duration, 
+                samplerate=self.sample_rate, 
+                channels=self.channels, 
+                dtype='int16', 
+                blocking=True
+            )
 
         print(f"Min: {recorded_audio.min()}")
         print(f"Max: {recorded_audio.max()}")
