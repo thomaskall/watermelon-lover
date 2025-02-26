@@ -8,6 +8,18 @@ import pyautogui
 from video_feed import CameraController
 from audio import AudioController
 
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument(
+        "-v",
+        "--visual",
+        action="store_true",
+        required=False,
+        help="whether or not to use video stream"
+        )
+args = parser.parse_args()
+
 def make_timestamp():
     """Make a timestamp"""
     return datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -28,7 +40,8 @@ class DataCollector:
         self.session_id = os.path.basename(self.session_dir)
         
         # Initialize controllers
-        self.camera_controller = CameraController(self.session_dir)
+        if args.visual:
+            self.camera_controller = CameraController(self.session_dir)
         self.audio_controller = AudioController(self.session_dir)
         
         # State management
@@ -90,16 +103,28 @@ class DataCollector:
     def _keyboard_listener(self):
         """Listen for keyboard commands using simple input"""
         time.sleep(5)
-        print("\nEnter commands:")
-        print("  [Enter] - Capture data")
-        print("  a      - Capture audio")
-        print("  v      - Capture video")
-        print("  q      - Quit")
+        if args.visual:
+            print("\nEnter commands:")
+            print("  [Enter] - Capture data")
+            print("  a      - Capture audio")
+            print("  v      - Capture video")
+            print("  q      - Quit")
+        else:
+            print("\nPress ENTER to capture sample")
         
         while True:
             try:
-                command = input("Enter command: \n").lower().strip()
-                
+                if not args.visual:
+                    command = input("\nPress ENTER to capture sample: \n").lower().strip()
+                else:
+                    print("COMMAND OPTIONS:")
+                    print("\t[ENTER]    -   capture both audio and images")
+                    print("\ta          -   capture only an audio sample")
+                    print("\tv          -   capture only a visual sample")
+                    print("\tq          -   quit the program")
+                    command = input("\nEnter command...\n")
+
+
                 if command == "":  # Enter key pressed
                     print("Capturing data...")
                     self._capture_data()
@@ -107,8 +132,11 @@ class DataCollector:
                     print("Capturing audio...")
                     self._capture_audio()
                 elif command == "v":
-                    print("Capturing video...")
-                    self._capture_video()
+                    if args.visual:
+                        print("Taking photos...")
+                        self._capture_video()
+                    else:
+                        print("Capture failed, no visual inspection initialized")
                 elif command == "q":
                     print("Quitting...")
                     break
@@ -127,7 +155,8 @@ class DataCollector:
         
         try:
             # Capture camera data
-            self.camera_controller.take_picture(base_name)
+            if args.visual:
+                self.camera_controller.take_picture(base_name)
             
             # Capture audio data (TODO)
             self.audio_controller.capture_audio(base_name)
@@ -152,7 +181,8 @@ class DataCollector:
     def start(self):
         """Start the data collection system"""
         # Start the camera display
-        self.camera_controller.start_display()
+        if args.visual:
+            self.camera_controller.start_display()
         print("\nStarting data collection system...")
         print(f"Watermelon ID: {self.watermelon_id}")
         print(f"Saving data to: {self.session_dir}")
@@ -166,7 +196,8 @@ class DataCollector:
         """Clean up resources"""
         print("\nCleaning up resources...")
 
-        self.camera_controller.release()
+        if args.visual:
+            self.camera_controller.release()
         
         # Get watermelon score before cleanup
         score: str | None = self._get_watermelon_score()
