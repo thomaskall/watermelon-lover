@@ -24,7 +24,7 @@
 
 #include "HX711.h"
 
-#define calibration_factor -7050.0 //This value is obtained using the SparkFun_HX711_Calibration sketch
+#define calibration_factor -21050.0 //This value is obtained using the SparkFun_HX711_Calibration sketch
 
 #define DOUT  3
 #define CLK  2
@@ -44,7 +44,7 @@ void setup() {
 
 void loop() {
   Serial.print("Reading: ");
-  Serial.print(scale.get_units(), 1); //scale.get_units() returns a float
-  Serial.print(" lbs"); //You can change this to kg but you'll need to refactor the calibration_factor
+  Serial.print(scale.get_units(), 3); //scale.get_units() returns a float
+  Serial.print(" kgs"); //You can change this to kg but you'll need to refactor the calibration_factor
   Serial.println();
 }
