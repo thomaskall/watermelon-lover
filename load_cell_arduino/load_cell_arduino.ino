@@ -74,8 +74,9 @@ void loop() {
     }
 
     if (tare) {
-        scale.tare();
+        delay(500);
         Serial.print("Taring");
+        scale.tare();
         Serial.println();
     }
     
