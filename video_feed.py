@@ -92,11 +92,10 @@ class Camera:
 
         except Exception as e:
             print(f"Error in camera {self.id}: {e}")
-            raise e
-                
+            
         finally:
             print(f"Releasing camera {self.id}")
-            self.cap.release()
+            cap.release()  # Release the local cap object
 
     def release(self):
         print(f"Releasing camera {self.id}")
@@ -242,21 +241,32 @@ class CameraController:
         """Clean up resources"""
         print("Releasing Camera Controller")
         
-        self.display_running.clear()
-        self.display_process.join()
-
+        # First stop all cameras to prevent new frames
         self.stop_event.set()
-        # Stop camera processes
         print("Stopping camera processes...")
         for camera in self.cameras:
             camera.release()
         print("All cameras have been released")
 
+        # Clear all queues to prevent blocking
+        print("Clearing frame queues...")
         for queue in self.frame_queues:
-            while not queue.empty() or queue.qsize() > 0:
-                queue.get()
+            while not queue.empty():
+                try:
+                    queue.get_nowait()
+                except queue.Empty:
+                    break
+        
+        # Now stop the display process
+        print("Stopping display process...")
+        self.display_running.clear()
+        if self.display_process and self.display_process.is_alive():
+            self.display_process.join(timeout=2)
+            if self.display_process.is_alive():
+                print("Display process didn't stop gracefully, terminating...")
+                self.display_process.terminate()
+                self.display_process.join()
 
-        print("Frame queues have been cleared")
         print("All resources have been released, quitting program")
 
 
