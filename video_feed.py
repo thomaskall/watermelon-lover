@@ -67,22 +67,21 @@ class Camera:
         # Don't create VideoCapture here - create it in the process
         self.frame_queue: Queue = frame_queue
         self.stop_event = stop_event
-        self.cap: cv2.VideoCapture|None = None
         self.process: Process = Process(target=self._capture_frames)
         self.process.start()
 
     def _capture_frames(self):
         """Continuously capture frames in a separate process"""
         # Create VideoCapture object inside the process
-        self.cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
+        cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
         
-        if not self.cap.isOpened():
+        if not cap.isOpened():
             print(f"Error: Could not open camera {self.id}")
             return
 
         try:
             while not self.stop_event.is_set():
-                ret, frame = self.cap.read()
+                ret, frame = cap.read()
                 if ret:
                     # Add timestamp to track frame freshness
                     self.frame_queue.put((self.id, time.time(), frame))
@@ -90,6 +89,7 @@ class Camera:
                     print(f"Error: Could not read frame from camera {self.id}")
                     break
                 time.sleep(0.01)  # Small delay to prevent overwhelming the queue
+
         except Exception as e:
             print(f"Error in camera {self.id}: {e}")
             raise e
@@ -106,7 +106,6 @@ class Camera:
             print(f"Camera {self.id} process didn't stop gracefully, terminating...")
             self.process.terminate()
             self.process.join()
-        self.cap.release()
 
 class CameraController:
     def __init__(self, session_dir: str):
@@ -205,11 +204,12 @@ class CameraController:
             return
             
         current_time = time.time()
-        for (camera_id, timestamp, frame) in latest_frames.items():
+        for camera_id in latest_frames:
+            timestamp, frame = latest_frames[camera_id]  # Unpack only timestamp and frame
             if current_time - timestamp < 1.0:
                 cv2.imwrite(f"{self.data_dir}/{name}_{camera_id}.jpg", frame)
             else:
-                    print(f"Warning: Stale frame for camera {camera_id}")
+                print(f"Warning: Stale frame for camera {camera_id}")
 
     def start_display(self):
         """Start displaying camera feeds in a separate process"""
