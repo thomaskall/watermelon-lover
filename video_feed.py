@@ -62,10 +62,9 @@ class Camera:
     def __init__(self, id: int, camera_path: str, frame_queue: Queue, stop_event):
         self.id: int = id
         self.camera_path: str = camera_path
-
         self.pipeline: str = build_pipeline(camera_path)
-        self.cap: cv2.VideoCapture = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
-
+        
+        # Don't create VideoCapture here - create it in the process
         self.frame_queue: Queue = frame_queue
         self.stop_event = stop_event
         self.process: Process = Process(target=self._capture_frames)
@@ -73,22 +72,30 @@ class Camera:
 
     def _capture_frames(self):
         """Continuously capture frames in a separate process"""
+        # Create VideoCapture object inside the process
+        cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
         
-        if not self.cap.isOpened():
+        if not cap.isOpened():
             print(f"Error: Could not open camera {self.id}")
             return
 
-        while not self.stop_event.is_set():
-            ret, frame = self.cap.read()
-            if ret:
-                # Add timestamp to track frame freshness
-                self.frame_queue.put((self.id, time.time(), frame))
-            else:
-                print(f"Error: Could not read frame from camera {self.id}")
-                break
-        
-        print(f"Releasing camera {self.id}")
-        self.cap.release()
+        try:
+            while not self.stop_event.is_set():
+                ret, frame = cap.read()
+                if ret:
+                    # Add timestamp to track frame freshness
+                    self.frame_queue.put((self.id, time.time(), frame))
+                else:
+                    print(f"Error: Could not read frame from camera {self.id}")
+                    break
+                time.sleep(0.01)  # Small delay to prevent overwhelming the queue
+        except Exception as e:
+            print(f"Error in camera {self.id}: {e}")
+            raise e
+                
+        finally:
+            print(f"Releasing camera {self.id}")
+            cap.release()
 
     def release(self):
         print(f"Releasing camera {self.id}")
@@ -98,8 +105,6 @@ class Camera:
             print(f"Camera {self.id} process didn't stop gracefully, terminating...")
             self.process.terminate()
             self.process.join()
-            self.cap.release()
-        print(f"Camera {self.id} released")
 
 class CameraController:
     def __init__(self, session_dir: str):
