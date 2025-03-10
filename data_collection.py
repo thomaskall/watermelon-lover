@@ -74,7 +74,7 @@ class DataCollector:
         if not os.path.exists(self.metadata_file):
             with open(self.metadata_file, 'w', newline='') as f:
                 writer = csv.writer(f)
-                writer.writerow(['session_id', 'timestamp', 'watermelon_id', 'size_img', 'size_wav', 'score'])
+                writer.writerow(['session_id', 'timestamp', 'watermelon_id', 'size_img', 'size_wav', 'weight'])
     
     def _get_watermelon_id(self) -> str:
         """Prompt user for watermelon ID"""
@@ -84,10 +84,10 @@ class DataCollector:
             default=None
         )
     
-    def _get_watermelon_score(self) -> str | None:
-        """Prompt user for watermelon score at end of session"""
+    def _get_watermelon_weight(self) -> str | None:
+        """Prompt user for watermelon weight at end of session"""
         return pyautogui.prompt(
-            text='Enter score for this watermelon (Brix Scale):',
+            text='Enter weight for this watermelon (kg):',
             title=self.gui_title,
             default=None
         )
@@ -98,7 +98,7 @@ class DataCollector:
         os.makedirs(session_dir, exist_ok=True)
         return session_dir
     
-    def _save_metadata(self, score: str | None):
+    def _save_metadata(self, weight: str | None):
         """Save session metadata to CSV file"""
         if args.visual:
             size_img = os.path.getsize(os.path.join(self.session_dir, "img"))
@@ -106,8 +106,8 @@ class DataCollector:
         if args.audio:
             size_wav = os.path.getsize(os.path.join(self.session_dir, "wav")) // 2
             print(f"Size of wav directory: {size_wav}")
-        if score is not None:
-            print(f"Score: {score}")
+        if weight is not None:
+            print(f"Weight: {weight}")
 
         with open(self.metadata_file, 'a', newline='') as f:
             writer = csv.writer(f)
@@ -115,9 +115,9 @@ class DataCollector:
                 self.session_id,
                 make_timestamp(),
                 self.watermelon_id,
-                size_img,
-                size_wav,
-                score
+                size_img if args.visual else None,
+                size_wav if args.audio else None,
+                weight
             ])
     
     def _keyboard_listener(self):
@@ -183,8 +183,8 @@ class DataCollector:
             self.camera_controller.release()
         
         # Get watermelon score before cleanup
-        score: str | None = self._get_watermelon_score()
-        self._save_metadata(score)
+        weight: str | None = self._get_watermelon_weight()
+        self._save_metadata(weight)
         
         print(f"Collection complete.")
         print(f"Data saved in: {self.session_dir}")
