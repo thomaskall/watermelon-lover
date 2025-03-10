@@ -67,21 +67,22 @@ class Camera:
         # Don't create VideoCapture here - create it in the process
         self.frame_queue: Queue = frame_queue
         self.stop_event = stop_event
+        self.cap: cv2.VideoCapture|None = None
         self.process: Process = Process(target=self._capture_frames)
         self.process.start()
 
     def _capture_frames(self):
         """Continuously capture frames in a separate process"""
         # Create VideoCapture object inside the process
-        cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
+        self.cap = cv2.VideoCapture(self.pipeline, cv2.CAP_GSTREAMER)
         
-        if not cap.isOpened():
+        if not self.cap.isOpened():
             print(f"Error: Could not open camera {self.id}")
             return
 
         try:
             while not self.stop_event.is_set():
-                ret, frame = cap.read()
+                ret, frame = self.cap.read()
                 if ret:
                     # Add timestamp to track frame freshness
                     self.frame_queue.put((self.id, time.time(), frame))
@@ -95,7 +96,7 @@ class Camera:
                 
         finally:
             print(f"Releasing camera {self.id}")
-            cap.release()
+            self.cap.release()
 
     def release(self):
         print(f"Releasing camera {self.id}")
@@ -105,6 +106,7 @@ class Camera:
             print(f"Camera {self.id} process didn't stop gracefully, terminating...")
             self.process.terminate()
             self.process.join()
+        self.cap.release()
 
 class CameraController:
     def __init__(self, session_dir: str):

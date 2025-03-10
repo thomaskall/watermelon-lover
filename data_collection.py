@@ -100,11 +100,12 @@ class DataCollector:
     
     def _save_metadata(self, score: str | None):
         """Save session metadata to CSV file"""
-        print(f"Session directory: {self.session_dir}")
-        size_img = os.path.getsize(os.path.join(self.session_dir, "img"))
-        print(f"Size of img directory: {size_img}")
-        size_wav = os.path.getsize(os.path.join(self.session_dir, "wav")) // 2
-        print(f"Size of wav directory: {size_wav}")
+        if args.visual:
+            size_img = os.path.getsize(os.path.join(self.session_dir, "img"))
+            print(f"Size of img directory: {size_img}")
+        if args.audio:
+            size_wav = os.path.getsize(os.path.join(self.session_dir, "wav")) // 2
+            print(f"Size of wav directory: {size_wav}")
         if score is not None:
             print(f"Score: {score}")
 
