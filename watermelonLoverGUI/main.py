@@ -1,3 +1,4 @@
+#pip3 install customtkinter
 import customtkinter
 import subprocess
 
