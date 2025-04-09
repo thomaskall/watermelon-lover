@@ -6,7 +6,7 @@ from frame_error    import *
 from frame_home     import *
 from frame_result   import *
 from data           import *
-
+from DataCollector import DataCollector
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
@@ -17,6 +17,7 @@ class App(customtkinter.CTk):
         self.prevFrame = customtkinter.CTkFrame
         self.isTared = False
         self.data = data()
+        self.dataCollector = DataCollector()
 
         # Initialize window settings
         self.title("WatermelonLoverUI")
@@ -76,6 +77,9 @@ class App(customtkinter.CTk):
             return
 
         # Insert test cycle here.
+        #TODO: debug this on actual system, just adapted existing DataCollector code for now.
+        self.dataCollector.start()
+        #TODO: Figure out what data will be output by the ML model, update UI (frame_result) accordingly.
         self.data.recordData(7,5)
         print("RAN CYCLE")
 
