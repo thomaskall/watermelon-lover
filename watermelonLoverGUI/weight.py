@@ -11,22 +11,25 @@ class weightSensor():
         
 
     @property
-    def is_open(self):
+    def is_open(self) -> bool:
         """Getter mask for the sensor property"""
-        return self.ser.is_open
+        return False if (self.ser is None) else self.ser.is_open
 
     def connect_serial(self):
-        if self.ser.is_open:
+        if self.is_open:
             return
         for i in range(5):
             try:
-                self.ser = serial.Serial(self.port, self.baudrate, self.timeout)
+                self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
             except serial.SerialException as e:
                 print(f"Error connecting to {self.port}: {e}")
                 time.sleep(1)
         return self.ser.is_open
 
     def get_data(self) -> str:
+        if (not self.is_open):
+            print("ERROR: Serial for weight sensor is not open.")
+            return
         data = None
         try:
             data = self.ser.readline().decode('utf-8').strip()
@@ -46,7 +49,10 @@ class weightSensor():
         self.ser.close()
 
 def main():
-    sensor = weightSensor()
+    port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
+    baudrate = 9600
+    timeout = 1
+    sensor = weightSensor(port, baudrate, timeout)
     sensor.connect_serial()
     try:
         while True:

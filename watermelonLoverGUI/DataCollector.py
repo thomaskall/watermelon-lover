@@ -13,7 +13,7 @@ from audio import AudioController
 from argparse import ArgumentParser
 
 # Initialization parameters for weight sensor.
-port = '/dev/tty.usbserial-110' # Replace with serial port: ls /dev/tty* | grep usb
+port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
 baudrate = 9600
 timeout = 1
 
