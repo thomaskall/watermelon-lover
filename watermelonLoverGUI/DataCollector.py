@@ -9,6 +9,7 @@ from weight import weightSensor
 from datetime import datetime
 from video_feed import CameraController
 from audio import AudioController
+from watermelonData import watermelonData as wData
 
 from argparse import ArgumentParser
 
@@ -16,6 +17,9 @@ from argparse import ArgumentParser
 port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
 baudrate = 9600
 timeout = 1
+
+# Method to use for data collection
+method = "tap"
 
 # parser = ArgumentParser()
 # parser.add_argument(
@@ -50,6 +54,7 @@ class DataCollector:
     custom_format = "%Y-%m-%d_%H-%M-%S_%f"
 
     def __init__(self, base_dir="data"):
+        self.base_name = ""
         self.base_dir = base_dir
         self.metadata_file = os.path.join(base_dir, "metadata.csv")
         self.watermelon_id = self._get_watermelon_id()
@@ -58,7 +63,7 @@ class DataCollector:
         self.session_id = os.path.basename(self.session_dir)
         
         # Initialize controllers
-        self.camera_controller = CameraController(self.session_dir)
+        #self.camera_controller = CameraController(self.session_dir)
         self.audio_controller = AudioController(self.session_dir)
 
         # Initialize weight sensors
@@ -98,8 +103,8 @@ class DataCollector:
     
     def _save_metadata(self, weight: str | None):
         """Save session metadata to CSV file"""
-        size_img = os.path.getsize(os.path.join(self.session_dir, "img"))
-        print(f"Size of img directory: {size_img}")
+        #size_img = os.path.getsize(os.path.join(self.session_dir, "img"))
+        #print(f"Size of img directory: {size_img}")
         size_wav = os.path.getsize(os.path.join(self.session_dir, "wav")) // 2
         print(f"Size of wav directory: {size_wav}")
         if weight is not None:
@@ -112,40 +117,44 @@ class DataCollector:
                 make_timestamp(),
                 self.watermelon_id,
                 #TODO: Double check if this is correct, not sure how to determine if file exists (should always exist?)
-                size_img if size_img > 0 else None,
+                #size_img if size_img > 0 else None,
                 size_wav if size_wav > 0 else None,
                 weight
             ])
     
-    def _capture_data(self):
+    def _capture_data(self) -> wData | None:
         """Capture video or audio data"""
         timestamp = make_timestamp()
-        base_name = f"sample_{timestamp}"
+        self.base_name = f"sample_{timestamp}"
+        data = None
         
         try:
-            self.camera_controller.take_picture(base_name)
-            self.audio_controller.capture_audio(base_name)
-
-            print(f"Sample {base_name} captured")
-
+            data = wData()
+            #self.camera_controller.take_picture(base_name)
+            data.audioData = self.audio_controller.capture_audio(self.base_name, method)
+            data.weightData = self.sensor.get_data()
+            print(f"Sample {self.base_name} captured")
+            
         except Exception as e:
             print(f"Error capturing data: {e}")
+        return data
     
-    def start(self):
+    def start(self) -> wData:
         """Start the data collection system"""
-        self._capture_data()
+        data = self._capture_data()
 
         print("\nStarting data collection system...")
         print(f"Watermelon ID: {self.watermelon_id}")
         print(f"Saving data to: {self.session_dir}")
         
-        self.cleanup()
+        return data
+        
     
     def cleanup(self):
         """Clean up resources"""
         print("\nCleaning up resources...")
 
-        self.camera_controller.release()
+        #self.camera_controller.release()
         
         # Get watermelon score before cleanup
         weight: str | None = self._get_watermelon_weight()

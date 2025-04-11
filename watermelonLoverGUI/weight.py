@@ -32,9 +32,12 @@ class weightSensor():
             return
         data = None
         try:
-            data = self.ser.readline().decode('utf-8').strip()
+            # Split data value from Serial string in format: "Received: 0.0000 kgs"
+            data = self.ser.readline().decode('utf-8').strip().split(" ")[1]
             if data:
                 print(f"Received: {data}")
+                #Truncate data for negative values.
+                data = int(data) if int(data) > 0 else 0
         except serial.SerialException as e:
             print(f"Serial exception occurred: {e}")
             print("Attempting to reconnect...")

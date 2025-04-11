@@ -59,7 +59,7 @@ class AudioController:
             audio_data = np.frombuffer(wf.readframes(num_frames), dtype=np.int16)
         return audio_data, sample_rate
         
-    def capture_audio(self, base_name: str, method: str = "tap"):
+    def capture_audio(self, base_name: str, method: str = "tap") -> str:
         """Capture audio data"""
         if self.audio_to_play is None:
             print("Warning: No audio file loaded for playback.... using 'tap' method")
@@ -112,6 +112,7 @@ class AudioController:
 
         # Process and save FFT
         self._process_and_save_fft(recorded_audio, base_name)
+        return output_file
 
     def _process_and_save_fft(self, recorded_audio, base_name):
         """Process the recorded audio and save FFT plot"""

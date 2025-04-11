@@ -5,7 +5,7 @@ import subprocess
 from frame_error    import *
 from frame_home     import *
 from frame_result   import *
-from data           import *
+from watermelonData import watermelonData as wData
 from DataCollector import DataCollector
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -16,7 +16,7 @@ class App(customtkinter.CTk):
         super().__init__()
         self.prevFrame = customtkinter.CTkFrame
         self.isTared = False
-        self.data = data()
+        self.data = wData()
         self.dataCollector = DataCollector()
 
         # Initialize window settings
@@ -77,18 +77,18 @@ class App(customtkinter.CTk):
             return
 
         # Insert test cycle here.
-        #TODO: debug this on actual system, just adapted existing DataCollector code for now.
-        self.dataCollector.start()
         #TODO: Figure out what data will be output by the ML model, update UI (frame_result) accordingly.
-        self.data.recordData(7,5)
-        print("RAN CYCLE")
+        self.data = self.dataCollector.start()
+        print(f"Weight recorded: {self.data.weightData}")
+        print(f"Audio file at: {self.data.audioData}")
+        print("FINISHED CYCLE")
 
         # Reset Tare status
         self.isTared = False
 
         # Show the result
-        if (self.data.valid):
-            print("1")
+        if (self.data.data_valid):
+            #TODO: Move this calculation to INSIDE frame_result, with watermelonData as the only input.
             color_sweetness = self._colorInterpolation(ui_red, ui_green, 0, 10, self.data.sweetness)
             color_quality = self._colorInterpolation(ui_red, ui_green, 0, 10, self.data.quality)
             self.show_frame(frame_result(self, color_sweetness, color_quality))
