@@ -1,0 +1,8 @@
+numpy
+regex
+pyautogui
+pynput
+sounddevice
+matplotlib
+scipy
+wave
