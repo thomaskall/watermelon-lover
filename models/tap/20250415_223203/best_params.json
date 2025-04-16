@@ -1,0 +1,30 @@
+{
+    "nn": {
+        "n_layers": 4,
+        "hidden_dim_0": 256,
+        "dropout_0": 0.0,
+        "hidden_dim_1": 128,
+        "dropout_1": 0.0,
+        "hidden_dim_2": 64,
+        "dropout_2": 0.0,
+        "hidden_dim_3": 32,
+        "dropout_3": 0.0,
+        "learning_rate": 0.0001,
+        "weight_decay": 1e-07
+    },
+    "rf": {
+        "n_estimators": 133,
+        "max_depth": 8,
+        "max_features": 0.8504563983254505,
+        "min_samples_split": 8,
+        "min_samples_leaf": 3
+    },
+    "xgb": {
+        "max_depth": 6,
+        "learning_rate": 0.09678753928608318,
+        "n_estimators": 260,
+        "min_child_weight": 2,
+        "subsample": 0.8806953417282739,
+        "colsample_bytree": 0.8882833179619462
+    }
+}
