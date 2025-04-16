@@ -7,9 +7,15 @@ from frame_home     import *
 from frame_result   import *
 from watermelonData import watermelonData as wData
 from DataCollector import DataCollector
+from weight import weightSensor
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
+
+# Initialization parameters for weight sensor.
+port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
+baudrate = 9600
+timeout = 1
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -17,7 +23,8 @@ class App(customtkinter.CTk):
         self.prevFrame = customtkinter.CTkFrame
         self.isTared = False
         self.data = wData()
-        self.dataCollector = DataCollector()
+        self.weightSensor = weightSensor(port=port, baudrate=baudrate, timeout=timeout)
+        self.dataCollector = DataCollector(self.weightSensor)
 
         # Initialize window settings
         self.title("WatermelonLoverUI")
@@ -95,8 +102,10 @@ class App(customtkinter.CTk):
     
     def _callback_tare(self):
         # Placeholder for taring
-        print("TARED SCALE")
+        self.weightSensor.tare()
+        print(self.weightSensor.get_data())
         self.isTared = True
+        print("TARED SCALE")
 
 app = App()
 

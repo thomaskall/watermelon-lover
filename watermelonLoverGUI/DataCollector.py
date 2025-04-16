@@ -13,10 +13,6 @@ from watermelonData import watermelonData as wData
 
 from argparse import ArgumentParser
 
-# Initialization parameters for weight sensor.
-port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
-baudrate = 9600
-timeout = 1
 
 # Method to use for data collection
 method = "tap"
@@ -53,7 +49,7 @@ class DataCollector:
     #Serialization format
     custom_format = "%Y-%m-%d_%H-%M-%S_%f"
 
-    def __init__(self, base_dir="data"):
+    def __init__(self,weightSensor, base_dir="data"):
         self.base_name = ""
         self.base_dir = base_dir
         self.metadata_file = os.path.join(base_dir, "metadata.csv")
@@ -67,7 +63,7 @@ class DataCollector:
         self.audio_controller = AudioController(self.session_dir)
 
         # Initialize weight sensors
-        self.sensor = weightSensor(port=port, baudrate=baudrate, timeout=timeout)
+        self.sensor = weightSensor
         self.sensor.connect_serial()
 
         # State management
@@ -89,9 +85,8 @@ class DataCollector:
 
         return datetime.now().strftime(self.custom_format)
     
-    def _get_watermelon_weight(self) -> str | None:
+    def _get_watermelon_weight(self) -> float | None:
         """Queries weight sensors for watermelon weight using Serial"""
-        #TODO: Add code to communicate with weight sensors
         return self.sensor.get_data()
         
     
