@@ -1,0 +1,27 @@
+version: '3'
+
+services:
+  data_collector:
+    container_name: data_collector
+    context: ./..
+    build: .
+    volumes:
+      # Mount data directory for persistent storage
+      - ./data:/app/data
+      # Mount device files for camera and audio
+      - /dev:/dev
+      # Mount X11 socket for GUI display
+      - /tmp/.X11-unix:/tmp/.X11-unix
+    devices:
+      # Give access to all devices (cameras, audio)
+      - /dev/snd:/dev/snd
+      - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
+    environment:
+      # Pass display for GUI windows
+      - DISPLAY=0.0
+      # Allow access to X server
+      - XAUTHORITY=/tmp/.Xauthority
+    network_mode: host
+    privileged: true  # Needed for hardware access
+    restart: unless-stopped
