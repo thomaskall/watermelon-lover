@@ -1,0 +1,13 @@
+#openl3 
+librosa 
+numpy 
+pandas 
+scipy 
+matplotlib 
+scikit-learn 
+xgboost
+optuna
+torch
+torchvision
+seaborn
+shap
