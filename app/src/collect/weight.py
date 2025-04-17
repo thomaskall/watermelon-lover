@@ -1,10 +1,10 @@
-import serial
+from serial import Serial
+from serial.serialutil import SerialException
 import time
 
-
 class weightSensor():
-    def __init__(self, port, baudrate, timeout):
-        self.ser = None
+    def __init__(self, port: str, baudrate: int, timeout: int):
+        self.ser: Serial
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -20,8 +20,8 @@ class weightSensor():
             return
         for i in range(5):
             try:
-                self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
-            except serial.SerialException as e:
+                self.ser = Serial(self.port, self.baudrate, timeout=self.timeout)
+            except SerialException as e:
                 print(f"Error connecting to {self.port}: {e}")
                 time.sleep(1)
         return self.ser.is_open
@@ -38,11 +38,11 @@ class weightSensor():
                 print(f"Received: {data}")
                 #Truncate data for negative values.
                 data = int(data) if int(data) > 0 else 0
-        except serial.SerialException as e:
+        except SerialException as e:
             print(f"Serial exception occurred: {e}")
             print("Attempting to reconnect...")
-            ser.close()
-            ser = self.connect_serial()
+            self.ser.close()
+            self.ser = self.connect_serial()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
         return data

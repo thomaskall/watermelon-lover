@@ -6,7 +6,7 @@ from scipy.fft import fft, fftfreq
 import scipy.io.wavfile as wavfile
 import os
 import time
-
+from typing import Literal
 def moving_average(data, window_size):
     if window_size % 2 == 0: #needs to be odd
         window_size += 1
@@ -59,7 +59,7 @@ class AudioController:
             audio_data = np.frombuffer(wf.readframes(num_frames), dtype=np.int16)
         return audio_data, sample_rate
         
-    def capture_audio(self, base_name: str, method: str = "tap") -> str:
+    def capture_audio(self, base_name: str, method: Literal["tap", "sweep", "impulse"]="tap") -> str:
         """Capture audio data"""
         if self.audio_to_play is None:
             print("Warning: No audio file loaded for playback.... using 'tap' method")
@@ -103,15 +103,12 @@ class AudioController:
                 dtype='int16', 
                 blocking=True
             )
-
-        print(f"Min: {recorded_audio.min()}")
-        print(f"Max: {recorded_audio.max()}")
         
         # Save raw audio
         wavfile.write(output_file, self.sample_rate, recorded_audio)
 
         # Process and save FFT
-        self._process_and_save_fft(recorded_audio, base_name)
+        # self._process_and_save_fft(recorded_audio, base_name)
         return output_file
 
     def _process_and_save_fft(self, recorded_audio, base_name):

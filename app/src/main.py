@@ -2,11 +2,11 @@
 import customtkinter
 import subprocess
 
-from frame_error    import *
-from frame_home     import *
-from frame_result   import *
-from watermelonData import watermelonData as wData
-from DataCollector import DataCollector
+from typing import Literal
+from components import *
+from components.frame import *
+from collect import *
+
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
@@ -15,8 +15,6 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.prevFrame = customtkinter.CTkFrame
-        self.isTared = False
-        self.data = wData()
         self.dataCollector = DataCollector()
 
         # Initialize window settings
@@ -25,7 +23,7 @@ class App(customtkinter.CTk):
         self.geometry("480x320")        # LCD screen dimension is 480x320
 
         # Start program showing home screen. Can be modified as needed
-        self.shown_frame = frame_home(self)
+        self.shown_frame = HomeFrame(self)
         self.shown_frame.grid(row=0, column=0, sticky="nesw")
     
     # Updates the shown_frame to the provided frame. Input has to be an instance of CTkFrame
@@ -49,7 +47,7 @@ class App(customtkinter.CTk):
     def _show_error(self, message):
         print("displaying error.")
         self.prevFrame = self.shown_frame
-        self.shown_frame = frame_error(self, message)
+        self.shown_frame = ErrorFrame(self, message)
         self.shown_frame.grid(row=0, column=0, sticky="nesw")
         self.shown_frame.tkraise()
 
@@ -67,14 +65,12 @@ class App(customtkinter.CTk):
     def _callback_showHome(self):
         print("showing home")
         self.data.clearData()
-        self.show_frame(frame_home(self))
+        self.show_frame(HomeFrame(self))
 
-    def _callback_runCycle(self):
-        # Check for Tared status
-        if (not self.isTared):
-            self._show_error("Not tared. Please remove all items from machine and " \
-            "recalibrate (tare) before starting.")
-            return
+    def _callback_runCycle(self, cycle_type: Literal["sweep", "tap", "impulse"]):
+        # Calibrate the scale
+        self.dataCollector.calibrate()
+        
 
         # Insert test cycle here.
         #TODO: Figure out what data will be output by the ML model, update UI (frame_result) accordingly.
@@ -89,14 +85,9 @@ class App(customtkinter.CTk):
         # Show the result
         if (self.data.data_valid):
             #TODO: Move this calculation to INSIDE frame_result, with watermelonData as the only input.
-            color_sweetness = self._colorInterpolation(ui_red, ui_green, 0, 10, self.data.sweetness)
-            color_quality = self._colorInterpolation(ui_red, ui_green, 0, 10, self.data.quality)
-            self.show_frame(frame_result(self, color_sweetness, color_quality))
-    
-    def _callback_tare(self):
-        # Placeholder for taring
-        print("TARED SCALE")
-        self.isTared = True
+            color_sweetness = self._colorInterpolation(UI_RED, UI_GREEN, 0, 10, self.data.sweetness)
+            color_quality = self._colorInterpolation(UI_RED, UI_GREEN, 0, 10, self.data.quality)
+            self.show_frame(ResultFrame(self, color_sweetness, color_quality))
 
 app = App()
 

@@ -15,3 +15,6 @@ matplotlib
 scipy
 wave
 customtkinter
+pyserial
+serial
+pydantic
