@@ -10,6 +10,11 @@ customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dar
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
 
+# Initialization parameters for weight sensor.
+port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
+baudrate = 9600
+timeout = 1
+
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
@@ -68,19 +73,31 @@ class App(customtkinter.CTk):
         self.show_frame(HomeFrame(self))
 
     def _callback_runCycle(self, cycle_type: Literal["sweep", "tap"]):
-
+        """
+        The main process that initiates a prediction cycle.
+        The choice of a sweep or tap is made by the user when pressing on the corresponding button.
+        """
         if not self.isTared:
             self._show_error("Please calibrate the scale before running a cycle.")
             return
         
+        # Collect image data and display it
         data: WatermelonData | None = self.data_collector.get_image_path(cycle_type, (self.width, self.height))
         if data.image_path is not None:
             print(f"Displaying image: {data.image_path}")
             self.show_frame(DisplayFrame(self, data.image_path))
+
+        # Collect audio data and display the status of the collection
         data = self.data_collector.capture_data(data)
+        # TODO: make audio data collection threaded...
+        ### Get indicator for beginning of audio collection and length of collection
+        ### Show progress bar of audio collection
+        ### When audio collection is complete, show completion message
         print(f"Weight recorded: {data.weight}")
         print(f"Audio file at: {data.wav_path}")
         print("FINISHED DATA COLLECTION")
+
+        # TODO: Feature extraction and prediction
 
         # Reset Tare status
         self.isTared = False
@@ -91,6 +108,15 @@ class App(customtkinter.CTk):
             color_sweetness = self._colorInterpolation(UI_RED, UI_GREEN, 0, 10, self.data.sweetness)
             color_quality = self._colorInterpolation(UI_RED, UI_GREEN, 0, 10, self.data.quality)
             self.show_frame(ResultFrame(self, color_sweetness, color_quality))
+    
+    def _callback_tare(self):
+        """
+        Tares the scale, recalibrating it to prepare for a new cycle.
+        """
+        self.data_collector.weight_sensor.tare()
+        print(self.data_collector.weight_sensor.get_data())
+        self.isTared = True
+        print("TARED SCALE")
 
 app = App()
 

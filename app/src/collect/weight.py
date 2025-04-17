@@ -1,6 +1,13 @@
 from serial import Serial
 from serial.serialutil import SerialException
 import time
+from  gpiozero import DigitalOutputDevice as DigitalOut
+from gpiozero import Device
+from gpiozero.pins.lgpio import LGPIOFactory
+
+Device.pin_factory = LGPIOFactory()
+tarePin = 26 #Corresponds to "GPIO26" or pin 37
+
 
 class WeightSensor():
     def __init__(self, port: str, baudrate: int, timeout: int):
@@ -8,6 +15,8 @@ class WeightSensor():
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
+        self.DO_tare = DigitalOut(tarePin, active_high=True, 
+                                  initial_value=False)
 
     @property
     def is_open(self) -> bool:
@@ -25,14 +34,15 @@ class WeightSensor():
                 time.sleep(1)
         return self.ser.is_open
 
-    def get_data(self) -> str:
+    def get_data(self) -> int:
         if (not self.is_open):
             print("ERROR: Serial for weight sensor is not open.")
             return
         data = None
         try:
             # Split data value from Serial string in format: "Received: 0.0000 kgs"
-            data = self.ser.readline().decode('utf-8').strip().split(" ")[1]
+            self.ser.reset_input_buffer()
+            data = self.ser.readline().decode('utf-8').strip().split(" ")[0]
             if data:
                 print(f"Received: {data}")
                 #Truncate data for negative values.
@@ -50,6 +60,10 @@ class WeightSensor():
         """Closes Serial connection."""
         self.ser.close()
 
+    def tare(self):
+        # ON duration, OFF duration, Number of times, Background Thread?
+        self.DO_tare.blink(0.2, 2, 1, False)
+
 def main():
     port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
     baudrate = 9600
@@ -58,7 +72,8 @@ def main():
     sensor.connect_serial()
     try:
         while True:
-            sensor.get_data()
+            print(sensor.ser.readline().decode("utf-8").split(" ")[0])
+            #sensor.get_data()
     finally:
         if sensor.is_open:
             sensor.close()

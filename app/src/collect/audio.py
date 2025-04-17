@@ -8,10 +8,10 @@ from typing import Literal
 class AudioController:
     def __init__(self, results_dir: str):
         # Audio settings
-        self.sample_rate = 44100
-        self.duration = 5
-        self.channels = 1
-        self.sweep_path = 'sine_50Hz_to_400Hz.wav'
+        self.sample_rate: int = 44100
+        self.duration: int = 5
+        self.channels: int = 1
+        self.sweep_path: str = 'sine_50Hz_to_400Hz.wav'
         
         # Device settings
         self.input_device_index = 2
@@ -34,6 +34,11 @@ class AudioController:
             
         print("Initializing Audio Controller")
         print(f"Available audio devices:\n{sd.query_devices()}")
+
+    @property
+    def audio_duration(self) -> int:
+        """Get the duration of the audio"""
+        return self.duration
 
     def _load_wav(self, filename):
         """Load a WAV file for playback"""
