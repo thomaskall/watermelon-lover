@@ -1,5 +1,4 @@
-from .watermelonData import WatermelonData
-from .DataCollector import DataCollector
+from .data_collection import *
 from datetime import datetime
 
 def make_timestamp():

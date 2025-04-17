@@ -2,7 +2,6 @@ import numpy as np
 from scipy.io.wavfile import write
 import sounddevice as sd
 
-
 # Parameters
 duration = 5  # duration of the sweep in seconds
 start_freq = 50  # starting frequency in Hz

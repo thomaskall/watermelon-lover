@@ -2,13 +2,12 @@ from serial import Serial
 from serial.serialutil import SerialException
 import time
 
-class weightSensor():
+class WeightSensor():
     def __init__(self, port: str, baudrate: int, timeout: int):
         self.ser: Serial
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
-        
 
     @property
     def is_open(self) -> bool:
@@ -55,7 +54,7 @@ def main():
     port = '/dev/ttyUSB0' # Replace with serial port: ls /dev/tty* | grep usb
     baudrate = 9600
     timeout = 1
-    sensor = weightSensor(port, baudrate, timeout)
+    sensor = WeightSensor(port, baudrate, timeout)
     sensor.connect_serial()
     try:
         while True:

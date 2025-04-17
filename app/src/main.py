@@ -3,8 +3,7 @@ import customtkinter
 import subprocess
 
 from typing import Literal
-from components import *
-from components.frame import *
+from ui import *
 from collect import *
 
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
@@ -15,12 +14,14 @@ class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
         self.prevFrame = customtkinter.CTkFrame
-        self.dataCollector = DataCollector()
+        self.data_collector = DataCollector()
 
         # Initialize window settings
         self.title("WatermelonLoverUI")
         self.overrideredirect(True)     # Removes window headers, use alt-F4 or close terminal to quit.
         self.geometry("480x320")        # LCD screen dimension is 480x320
+        self.width: int = self.winfo_reqwidth()
+        self.height: int = self.winfo_reqheight()
 
         # Start program showing home screen. Can be modified as needed
         self.shown_frame = HomeFrame(self)
@@ -64,26 +65,28 @@ class App(customtkinter.CTk):
 
     def _callback_showHome(self):
         print("showing home")
-        self.data.clearData()
         self.show_frame(HomeFrame(self))
 
-    def _callback_runCycle(self, cycle_type: Literal["sweep", "tap", "impulse"]):
-        # Calibrate the scale
-        self.dataCollector.calibrate()
-        
+    def _callback_runCycle(self, cycle_type: Literal["sweep", "tap"]):
 
-        # Insert test cycle here.
-        #TODO: Figure out what data will be output by the ML model, update UI (frame_result) accordingly.
-        self.data = self.dataCollector.start()
-        print(f"Weight recorded: {self.data.weightData}")
-        print(f"Audio file at: {self.data.audioData}")
-        print("FINISHED CYCLE")
+        if not self.isTared:
+            self._show_error("Please calibrate the scale before running a cycle.")
+            return
+        
+        data: WatermelonData | None = self.data_collector.get_image_path(cycle_type, (self.width, self.height))
+        if data.image_path is not None:
+            print(f"Displaying image: {data.image_path}")
+            self.show_frame(DisplayFrame(self, data.image_path))
+        data = self.data_collector.capture_data(data)
+        print(f"Weight recorded: {data.weight}")
+        print(f"Audio file at: {data.wav_path}")
+        print("FINISHED DATA COLLECTION")
 
         # Reset Tare status
         self.isTared = False
 
         # Show the result
-        if (self.data.data_valid):
+        if data.is_complete():
             #TODO: Move this calculation to INSIDE frame_result, with watermelonData as the only input.
             color_sweetness = self._colorInterpolation(UI_RED, UI_GREEN, 0, 10, self.data.sweetness)
             color_quality = self._colorInterpolation(UI_RED, UI_GREEN, 0, 10, self.data.quality)
