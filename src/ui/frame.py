@@ -5,106 +5,155 @@ from .theme_colors import *
 from PIL import Image
 
 class ErrorFrame(customtkinter.CTkFrame):
-    def __init__(self, master, str_warning):
+    def __init__(self, master, str_warning: str):
         super().__init__(master)
         self.master = master
         self.configure(border_width=0, fg_color="transparent")
 
         #Frame consists of image and error in 1st row, and OK button on second row.
-        self.grid_columnconfigure((0,1), weight=1)
-        self.grid_rowconfigure((0,1), weight=1)
+        self.grid_columnconfigure((0), weight=1)
+        self.grid_rowconfigure((0,1,2), weight=1)
         self.grid_configure(sticky="nesw")
 
-        error_image = customtkinter.CTkImage(light_image=Image.open("img/error.png"),
-                                                  dark_image=Image.open("img/error.png"),
-                                                  size=(150, 150))
-        self.img_error = customtkinter.CTkLabel(self, image=error_image, text="")
-        self.img_error.grid(row=0, column=0, padx=20, pady=20)
+        
 
-        self.lbl_message = customtkinter.CTkLabel(self, justify="center", wraplength=250,
-                                                   text=str_warning)
-        self.lbl_message.grid(row=0, column=1, padx=20, pady=20)
+        self.lbl_message = customtkinter.CTkLabel(
+            self, 
+            justify="center", 
+            wraplength=350,
+            text=str_warning,
+            font=("Poppins", 18)
+        )
+        self.lbl_message.grid(
+            row=0, 
+            column=0, 
+            padx=10, 
+            pady=10, 
+            sticky="s"
+        )
 
-        self.btn_OK = customtkinter.CTkButton(self, text="OK", command=self.master._callback_returnFromError)
-        self.btn_OK.grid(row=1, column=0, columnspan=2, padx=20, pady=20, sticky="s")
+        error_image = customtkinter.CTkImage(
+            light_image=Image.open("/home/melons/watermelon-lover/src/ui/img/error.png"),
+            dark_image=Image.open("/home/melons/watermelon-lover/src/ui/img/error.png"),
+            size=(90, 90)
+        )
+        self.img_error = customtkinter.CTkLabel(
+            self, 
+            image=error_image,
+            text="",
+        )
+        self.img_error.grid(
+            row=1, 
+            column=0, 
+            padx=20, 
+            pady=20
+        )
+
+        self.btn_OK = customtkinter.CTkButton(
+            self, 
+            fg_color=UI_GREEN,
+            text="OK",
+            text_color=UI_BLACK,
+            command=self.master._callback_returnFromError,
+            font=("Poppins", 12)
+        )
+        self.btn_OK.grid(
+            row=2, 
+            column=0, 
+            columnspan=1,
+            padx=20, 
+            pady=20
+        )
 
 
 class HomeFrame(customtkinter.CTkFrame):
-    def __init__(self, master):
+    def __init__(self, master, tared = False):
         super().__init__(master)
         self.master = master
         self.configure(border_width=0, fg_color="transparent")
 
         # Frame consists of 2 columns and 3 rows
-        self.grid_columnconfigure((0,1), weight=1)
+        self.grid_columnconfigure((0,1,2), weight=1)
         self.grid_rowconfigure((0,1,2), weight=1)
         self.grid_configure(sticky="nesw")
+        # Make the frame expand to fill its parent
+        self.grid(sticky="nsew")
+        self.master.grid_rowconfigure(0, weight=1)
+        self.master.grid_columnconfigure(0, weight=1)
 
-        # Greeting message at the top
+        # Greeting message centered across all columns
         self.lbl_greeting = customtkinter.CTkLabel(
-            self, 
-            justify="center", 
+            self,
+            justify="center",
             wraplength=430,
-            text="LOVER YOUR WATERMELON!\nSelect one of the options below to begin."
+            text=f"""LOVE YOUR WATERMELON\n{
+                'Press the red button to calibrate the scale before placing your watermelon on it' 
+                if not tared else 
+                'Select a method to test the sweetness of the watermelon'
+                }""",
+            font=("Poppins", 14)
         )
         self.lbl_greeting.grid(
-            row=0, 
-            column=0, 
-            columnspan=2, 
-            padx=20, 
-            pady=20
+            row=0,
+            column=0,
+            columnspan=3,
+            padx=20,
+            pady=10,
+            sticky="n"
         )
 
-        # Top row buttons (sweep, tap, impulse)
+        # Top row buttons
         self.btn_sweep = customtkinter.CTkButton(
-            self, 
-            text="START\nSWEEP", 
+            self,
+            text="SWEEP",
             command=self._callback_sweep,
-            fg_color=UI_GREEN, 
-            text_color=UI_DARK_GREEN,
-            width=200,
-            height=200
+            fg_color=UI_GREEN if tared else UI_GRAY,
+            text_color=UI_BLACK,
+            font=("Poppins", 18),
+            width=175,
+            height=75
         )
         self.btn_sweep.grid(
-            row=0, 
-            column=0, 
-            padx=20, 
-            pady=20, 
-            sticky="w"
+            row=1,
+            column=0,
+            padx=20,
+            pady=20,
         )
 
         self.btn_tap = customtkinter.CTkButton(
-            self, 
-            text="START\nTAP", 
+            self,
+            text="TAP",
             command=self._callback_tap,
-            fg_color=UI_GREEN, 
-            text_color=UI_DARK_GREEN,
-            width=200, 
-            height=200
+            fg_color=UI_GREEN if tared else UI_GRAY,
+            text_color=UI_BLACK,
+            font=("Poppins", 18),
+            width=175,
+            height=75
         )
         self.btn_tap.grid(
-            row=1, 
-            column=1, 
-            padx=20, 
-            pady=20
+            row=1,
+            column=2,
+            padx=20,
+            pady=20,
         )
 
-        # Bottom row tare button spanning all columns
+        # Use column 2 for spacing or more buttons in the future
+        # Bottom row tare button spanning all 3 columns
         self.btn_tare = customtkinter.CTkButton(
-            self, 
-            text="TARE\nSCALE", 
-            command=self._callback_tare,
-            fg_color=UI_RED, 
-            text_color=UI_DARK_RED,
-            width=600,  # Adjusted to span the width
-            height=100  # Adjusted height for bottom row
+            self,
+            fg_color=UI_RED if not tared else UI_GRAY,
+            text="CALIBRATE\nSCALE",
+            text_color=UI_BLACK,
+            font=("Poppins", 18),
+            height=75,
+            command=self._callback_tare
         )
         self.btn_tare.grid(
-            row=2, 
-            column=0, 
-            columnspan=2, 
-            padx=20, 
-            pady=20, 
+            row=2,
+            column=0,
+            columnspan=3,
+            padx=20,
+            pady=20,
             sticky="ew"
         )
 

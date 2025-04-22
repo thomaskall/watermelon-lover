@@ -3,7 +3,7 @@ from typing import Literal
 from pdb import set_trace
 from ui import *
 from collect import *
-from predict import *
+from predict import get_spectrogram #*
 
 
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
@@ -28,6 +28,8 @@ class App(customtkinter.CTk):
         self.width: int = self.winfo_reqwidth()
         self.height: int = self.winfo_reqheight()
 
+        self.isTared: bool = False
+
         # Start program showing home screen. Can be modified as needed
         self.shown_frame = HomeFrame(self)
         self.shown_frame.grid(row=0, column=0, sticky="nesw")
@@ -50,16 +52,16 @@ class App(customtkinter.CTk):
         blue    = int((((high_color & 0x0000ff) - (low_color & 0x0000ff)) * (value - low)) / (high - low))
         return "#" + hex(0xffffff & ((red & 0xff0000) | (green & 0x00ff00) | (blue & 0x0000ff)))[2:]
 
-    def _show_error(self, message):
+    ###################
+    ##---CALLBACKS---##
+    ###################
+
+    def _show_error(self, message: str):
         print("displaying error.")
         self.prevFrame = self.shown_frame
         self.shown_frame = ErrorFrame(self, message)
         self.shown_frame.grid(row=0, column=0, sticky="nesw")
         self.shown_frame.tkraise()
-
-    ###################
-    ##---CALLBACKS---##
-    ###################
 
     def _callback_returnFromError(self):
         temp = self.shown_frame
@@ -70,23 +72,24 @@ class App(customtkinter.CTk):
 
     def _callback_showHome(self):
         print("showing home")
-        self.show_frame(HomeFrame(self))
+        self.show_frame(HomeFrame(self, self.isTared))
 
     def _callback_runCycle(self, cycle_type: Literal["sweep", "tap"]):
         """
         The main process that initiates a prediction cycle.
         The choice of a sweep or tap is made by the user when pressing on the corresponding button.
         """
-        set_trace()
-        # if not self.isTared:
-        #     self._show_error("Please calibrate the scale before running a cycle.")
-        #     return
+        if not self.isTared:
+            self._show_error("Please calibrate the scale before running a cycle.")
+            return
         
         # Collect image data and display it
         data: WatermelonData | None = self.data_collector.get_image_path(cycle_type, (self.width, self.height))
         if data.image_path is not None:
             print(f"Displaying image: {data.image_path}")
             self.show_frame(DisplayFrame(self, data.image_path))
+
+        set_trace()
 
         # Collect audio data and display the status of the collection
         data = self.data_collector.capture_data(data)
@@ -100,7 +103,7 @@ class App(customtkinter.CTk):
 
         # TODO: Feature extraction and prediction
         data.spectrogram_path = get_spectrogram(data.wav_path)
-        data.brix_prediction = predict_from_path(data.spectrogram_path, data.weight)
+        data.brix_prediction = 8.0 # predict_from_path(data.spectrogram_path, data.weight)
         # Reset Tare status
         self.isTared = False
 
@@ -115,10 +118,12 @@ class App(customtkinter.CTk):
         """
         Tares the scale, recalibrating it to prepare for a new cycle.
         """
-        self.data_collector.weight_sensor.tare()
-        print(self.data_collector.weight_sensor.get_data())
+        # self.data_collector.weight_sensor.tare()
+        # print(self.data_collector.weight_sensor.get_data())
         self.isTared = True
         print("TARED SCALE")
+        self._callback_showHome()
+
 
 app = App()
 

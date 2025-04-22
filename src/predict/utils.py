@@ -1,4 +1,4 @@
-import torch
+#import torch
 import librosa as lib
 import numpy as np
 import pathlib
@@ -37,17 +37,17 @@ def get_spectrogram(audio_file: str) -> str:
     image = image.convert('L')  # Convert to grayscale
     image_path = save_dir / f'{audio_file.stem}_spec.png'
     image.save(str(image_path))
-    return image_path
+    return str(image_path.absolute())
 
-def get_device():
-    """Get the appropriate device for training"""
-    if torch.backends.mps.is_available():
-        device = torch.device("mps")
-        print("Using MPS device")
-    elif torch.cuda.is_available():
-        device = torch.device("cuda")
-        print("Using CUDA device")
-    else:
-        device = torch.device("cpu")
-        print("Using CPU device")
-    return device
+# def get_device():
+#     """Get the appropriate device for training"""
+#     if torch.backends.mps.is_available():
+#         device = torch.device("mps")
+#         print("Using MPS device")
+#     elif torch.cuda.is_available():
+#         device = torch.device("cuda")
+#         print("Using CUDA device")
+#     else:
+#         device = torch.device("cpu")
+#         print("Using CPU device")
+#     return device

@@ -11,7 +11,7 @@ tarePin = 26 #Corresponds to "GPIO26" or pin 37
 
 class WeightSensor():
     def __init__(self, port: str, baudrate: int, timeout: int):
-        self.ser: Serial
+        self.ser: Serial|None = None
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -23,7 +23,7 @@ class WeightSensor():
         """Getter mask for the sensor property"""
         return False if (self.ser is None) else self.ser.is_open
 
-    def connect_serial(self):
+    def connect_serial(self) -> bool:
         if self.is_open:
             return
         for i in range(5):
@@ -34,11 +34,11 @@ class WeightSensor():
                 time.sleep(1)
         return self.ser.is_open
 
-    def get_data(self) -> int:
+    def get_data(self) -> float:
         if (not self.is_open):
             print("ERROR: Serial for weight sensor is not open.")
             return
-        data = None
+        data = 0.0
         try:
             # Split data value from Serial string in format: "Received: 0.0000 kgs"
             self.ser.reset_input_buffer()
@@ -46,7 +46,7 @@ class WeightSensor():
             if data:
                 print(f"Received: {data}")
                 #Truncate data for negative values.
-                data = int(data) if int(data) > 0 else 0
+                data = data if data > 0 else 0
         except SerialException as e:
             print(f"Serial exception occurred: {e}")
             print("Attempting to reconnect...")
@@ -54,7 +54,8 @@ class WeightSensor():
             self.ser = self.connect_serial()
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
-        return data
+        finally:
+            return float(data)
 
     def close(self):
         """Closes Serial connection."""

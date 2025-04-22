@@ -1,5 +1,4 @@
 from __future__ import annotations
-import numpy as np
 import os
 from typing import Literal
 from datetime import datetime
@@ -20,7 +19,7 @@ def make_timestamp() -> str:
 # Datatype to hold data passed down the pipeline.
 class WatermelonData(BaseModel):
     id:                 Annotated[str, Field(default_factory=make_timestamp)]
-    cycle_type:         Annotated[Literal["sweep", "tap"], Field(discriminator="cycle_type")]
+    cycle_type:         Annotated[Literal["sweep", "tap"], Field(..., description="Cycle type")]
     image_path:         Annotated[str | None, Field(default=None)]
     wav_path:           Annotated[str | None, Field(default=None)]
     spectrogram_path:   Annotated[str | None, Field(default=None)]
@@ -55,8 +54,8 @@ class DataCollector:
         # Initialize peripherals
         self.camera_controller = CameraController(self.results_dir)
         self.audio_controller = AudioController(self.results_dir)
-        self.weight_sensor = WeightSensor(port=port, baudrate=9600, timeout=3)
-        self.weight_sensor.connect_serial()
+        # self.weight_sensor = WeightSensor(port=port, baudrate=9600, timeout=3)
+        # self.weight_sensor.connect_serial()
     
     def _create_results_dir(self, results_dir_base: str) -> str:
         """Create a new results directory with timestamp and watermelon ID"""
@@ -67,8 +66,8 @@ class DataCollector:
     def capture_data(self, data: WatermelonData) -> WatermelonData | None:
         """Capture audio and weight data"""
         try:
-            data.wav_path = self.audio_controller.capture_audio(data.id, data.cycle_type)
-            data.weight = float(self.weight_sensor.get_data())
+            data.wav_path = "/home/melons/watermelon-lover/src/collect/sine_50Hz_to_400Hz.wav" # self.audio_controller.capture_audio(data.id, data.cycle_type)
+            data.weight = 5.0 # float(self.weight_sensor.get_data())
             print(f"Sample {data.id} captured")
             
         except Exception as e:
@@ -78,15 +77,15 @@ class DataCollector:
     def get_image_path(self, cycle_type: Literal["sweep", "tap"], dimensions: tuple[int, int]) -> str | None:
         """Get the image path"""
         data: WatermelonData = WatermelonData(
-            cycle_type=cycle_type,
-            image_path=self.camera_controller.save_images(cycle_type, dimensions)
+            cycle_type=cycle_type
         )
+        data.image_path = self.camera_controller.save_images(data.id, dimensions)
         return data
     
     def cleanup(self):
         """Clean up resources"""
         self.camera_controller.release()
-        self.weight_sensor.close()
+        # self.weight_sensor.close()
 
 def main():
     try:

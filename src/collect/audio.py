@@ -11,7 +11,7 @@ class AudioController:
         self.sample_rate: int = 44100
         self.duration: int = 5
         self.channels: int = 1
-        self.sweep_path: str = 'sine_50Hz_to_400Hz.wav'
+        self.sweep_path: str = '/home/melons/watermelon-lover/src/collect/sine_50Hz_to_400Hz.wav'
         
         # Device settings
         self.input_device_index = 2
@@ -29,7 +29,7 @@ class AudioController:
         try:
             self.sweep_signal, _ = self._load_wav(self.sweep_path)
         except Exception as e:
-            print(f"Error loading wav file: {e}")
+            print(f"Error loading sweep wav file: {e}")
             self.sweep_signal = None
             
         print("Initializing Audio Controller")
