@@ -1,10 +1,10 @@
-#pip3 install customtkinter
 import customtkinter
-import subprocess
-
 from typing import Literal
+from pdb import set_trace
 from ui import *
 from collect import *
+from predict import *
+
 
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
@@ -77,9 +77,10 @@ class App(customtkinter.CTk):
         The main process that initiates a prediction cycle.
         The choice of a sweep or tap is made by the user when pressing on the corresponding button.
         """
-        if not self.isTared:
-            self._show_error("Please calibrate the scale before running a cycle.")
-            return
+        set_trace()
+        # if not self.isTared:
+        #     self._show_error("Please calibrate the scale before running a cycle.")
+        #     return
         
         # Collect image data and display it
         data: WatermelonData | None = self.data_collector.get_image_path(cycle_type, (self.width, self.height))
@@ -98,7 +99,8 @@ class App(customtkinter.CTk):
         print("FINISHED DATA COLLECTION")
 
         # TODO: Feature extraction and prediction
-
+        data.spectrogram_path = get_spectrogram(data.wav_path)
+        data.brix_prediction = predict_from_path(data.spectrogram_path, data.weight)
         # Reset Tare status
         self.isTared = False
 

@@ -20,7 +20,7 @@ def make_timestamp() -> str:
 # Datatype to hold data passed down the pipeline.
 class WatermelonData(BaseModel):
     id:                 Annotated[str, Field(default_factory=make_timestamp)]
-    cycle_type:         Annotated[Literal["sweep", "tap", "impulse"], Field(discriminator="cycle_type")]
+    cycle_type:         Annotated[Literal["sweep", "tap"], Field(discriminator="cycle_type")]
     image_path:         Annotated[str | None, Field(default=None)]
     wav_path:           Annotated[str | None, Field(default=None)]
     spectrogram_path:   Annotated[str | None, Field(default=None)]
