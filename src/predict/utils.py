@@ -30,7 +30,7 @@ def get_spectrogram(audio_file: str) -> str:
     cqt_spectrogram_db = 255 * (cqt_spectrogram_db - np.min(cqt_spectrogram_db)) / (np.max(cqt_spectrogram_db) - np.min(cqt_spectrogram_db))
     cqt_spectrogram_db = cqt_spectrogram_db.astype(np.uint8)
 
-    save_dir = CWD / 'spectrograms'
+    save_dir = audio_file.parent / 'spectrograms'
     save_dir.mkdir(parents=True, exist_ok=True)
     # Save the spectrogram as a black and white image
     image = Image.fromarray(cqt_spectrogram)

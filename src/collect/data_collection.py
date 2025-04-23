@@ -74,7 +74,7 @@ class DataCollector:
             print(f"Error capturing data: {e}")
         return data
     
-    def get_image_path(self, cycle_type: Literal["sweep", "tap"], dimensions: tuple[int, int]) -> str | None:
+    def get_image_path(self, cycle_type: Literal["sweep", "tap"], dimensions: tuple[int, int]) -> WatermelonData:
         """Get the image path"""
         data: WatermelonData = WatermelonData(
             cycle_type=cycle_type

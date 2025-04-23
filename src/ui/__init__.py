@@ -1,2 +1,2 @@
 from .frame import *
-from .theme_colors import *
+from .color import *
