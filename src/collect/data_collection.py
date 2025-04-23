@@ -54,8 +54,8 @@ class DataCollector:
         # Initialize peripherals
         self.camera_controller = CameraController(self.results_dir)
         self.audio_controller = AudioController(self.results_dir)
-        # self.weight_sensor = WeightSensor(port=port, baudrate=9600, timeout=3)
-        # self.weight_sensor.connect_serial()
+        self.weight_sensor = WeightSensor(port=port, baudrate=9600, timeout=3)
+        self.weight_sensor.connect_serial()
     
     def _create_results_dir(self, results_dir_base: str) -> str:
         """Create a new results directory with timestamp and watermelon ID"""
@@ -66,8 +66,8 @@ class DataCollector:
     def capture_data(self, data: WatermelonData) -> WatermelonData | None:
         """Capture audio and weight data"""
         try:
-            data.wav_path = "/home/melons/watermelon-lover/src/collect/sine_50Hz_to_400Hz.wav" # self.audio_controller.capture_audio(data.id, data.cycle_type)
-            data.weight = 5.0 # float(self.weight_sensor.get_data())
+            data.wav_path = self.audio_controller.capture_audio(data.id, data.cycle_type) # "/home/melons/watermelon-lover/src/collect/sine_50Hz_to_400Hz.wav" # 
+            data.weight = float(self.weight_sensor.get_data())
             print(f"Sample {data.id} captured")
             
         except Exception as e:

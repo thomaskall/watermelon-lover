@@ -6,6 +6,7 @@ from glob import glob as glob
 # from tqdm import tqdm
 import os
 from PIL import Image
+import random
 
 CWD = pathlib.Path(os.getcwd())
 
@@ -51,3 +52,9 @@ def get_spectrogram(audio_file: str) -> str:
 #         device = torch.device("cpu")
 #         print("Using CPU device")
 #     return device
+
+def bounded_gaussian(min_val: float, max_val: float, mu: float, sigma: float):
+    while True:
+        val = random.gauss(mu, sigma)
+        if min_val <= val <= max_val:
+            return val

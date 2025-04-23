@@ -2,9 +2,8 @@ import customtkinter
 from typing import Literal
 from ui import *
 from collect import *
-from predict import get_spectrogram #*
+from predict import get_spectrogram, bounded_gaussian #*
 from threading import Thread
-from time import sleep
 
 
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
@@ -118,14 +117,13 @@ class App(customtkinter.CTk):
         def threaded_audio_collection():
             nonlocal data
             data = self.data_collector.capture_data(data)
-            sleep(5)
             print(f"Weight recorded: {data.weight}")
             print(f"Audio file at: {data.wav_path}")
             print("FINISHED DATA COLLECTION")
 
             # TODO: Feature extraction and prediction
             data.spectrogram_path = get_spectrogram(data.wav_path)
-            data.brix_prediction = 5 # predict_from_path(data.spectrogram_path, data.weight)
+            data.brix_prediction = bounded_gaussian(5, 12, 8.5, 1.5) # predict_from_path(data.spectrogram_path, data.weight)
 
             # Show the result
             if data.is_complete():
