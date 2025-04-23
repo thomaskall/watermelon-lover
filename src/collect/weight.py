@@ -46,7 +46,7 @@ class WeightSensor():
             if data:
                 print(f"Received: {data}")
                 #Truncate data for negative values.
-                data = data if data > 0 else 0
+                data = data if float(data) > 0 else 0
         except SerialException as e:
             print(f"Serial exception occurred: {e}")
             print("Attempting to reconnect...")
@@ -74,7 +74,7 @@ def main():
     try:
         while True:
             print(sensor.ser.readline().decode("utf-8").split(" ")[0])
-            #sensor.get_data()
+            sensor.get_data()
     finally:
         if sensor.is_open:
             sensor.close()

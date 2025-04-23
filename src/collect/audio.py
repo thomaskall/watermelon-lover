@@ -14,8 +14,8 @@ class AudioController:
         self.sweep_path: str = '/home/melons/watermelon-lover/src/collect/sine_50Hz_to_400Hz.wav'
         
         # Device settings
-        self.input_device_index = 2
-        self.output_device_index = 2
+        self.input_device_index = 0
+        self.output_device_index = 0
         sd.default.device = (self.input_device_index, self.output_device_index)
         sd.default.samplerate = self.sample_rate
         
