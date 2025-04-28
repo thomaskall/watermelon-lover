@@ -1,0 +1,17 @@
+{
+    "rf": {
+        "n_estimators": 166,
+        "max_depth": 7,
+        "max_features": 0.7868869505785887,
+        "min_samples_split": 8,
+        "min_samples_leaf": 1
+    },
+    "xgb": {
+        "max_depth": 4,
+        "learning_rate": 0.0012829355220224231,
+        "n_estimators": 418,
+        "min_child_weight": 7,
+        "subsample": 0.8649807804106476,
+        "colsample_bytree": 0.7133732723605487
+    }
+}
